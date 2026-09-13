@@ -37,14 +37,14 @@ export const assetStatusFilterLabels: Record<AssetLibraryStatusFilter, string> =
   blocked: '阻塞',
 };
 /**
- * Kept as a union for compatibility with the pre-v3 callers. New callers
+ * Kept as a union for compatibility with legacy callers. New callers
  * should pass a status filter and a separate AssetLibraryScope.
  */
 export type AssetLibraryFilter = AssetLibraryStatusFilter | AssetLibraryScope;
 export type AssetSort = 'priority' | 'grade' | 'updated' | 'id';
 
 // These are the legacy category values that may still be passed through the
-// `filter` argument. `all` is a status value in the v3 API and must not
+// `filter` argument. `all` is a status value in the current API and must not
 // override an explicitly selected scope.
 const legacyScopeFilters = new Set<Exclude<AssetLibraryScope, 'all'>>(['character', 'scene-prop', 'fusion']);
 

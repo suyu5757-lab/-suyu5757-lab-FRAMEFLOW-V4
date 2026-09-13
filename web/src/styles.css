@@ -1357,8 +1357,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .character-reference-plan-note { display: flex; flex-direction: column; gap: 4px; margin-top: 9px; padding: 8px 9px; border: 1px solid rgba(143,205,192,.26); border-radius: 7px; background: rgba(143,205,192,.045); color: #b9d5c7; font-size: 9px; line-height: 1.5; }
 .character-reference-plan-note strong { color: #9bd0c4; font-size: 9px; }
 
-/* V3 asset library and audit workflow */
-.asset-library-v3 { display: flex; min-height: 100%; height: 100%; flex-direction: column; overflow: hidden; font-family: var(--project-font); }
+/* V4 asset library and audit workflow */
+.asset-library-v4 { display: flex; min-height: 100%; height: 100%; flex-direction: column; overflow: hidden; font-family: var(--project-font); }
 .asset-subtitle { margin-top: 6px; color: var(--muted); font-size: 10px; }
 .asset-summary .production-ready { color: #a8d9c9; border-color: rgba(168,217,201,.38); }
 .asset-library-toolbar { display: grid; gap: 13px; margin: 18px 0; padding: 14px; border: 1px solid rgba(134,157,119,.28); border-radius: 12px; background: linear-gradient(135deg, rgba(27,34,22,.82), rgba(13,17,12,.9)); box-shadow: 0 12px 30px rgba(0,0,0,.12); font-family: var(--project-font); }
@@ -1386,15 +1386,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .asset-filter-result b { color: #edf6e8; font-size: 15px; letter-spacing: -.04em; }
 .asset-filter-result b.production { color: var(--acid); }
 .asset-filter-result i { color: #53614e; font-style: normal; margin: 0 2px; }
-.asset-library-layout-v3 { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; overflow: hidden; }
-.asset-library-layout-v3 > .asset-list, .asset-library-layout-v3 > .asset-detail-v3 { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
-.asset-library-layout-v3 > .asset-list { overflow-x: hidden; }
+.asset-library-layout-v4 { display: grid; grid-template-columns: minmax(220px, 280px) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.asset-library-layout-v4 > .asset-list, .asset-library-layout-v4 > .asset-detail-v4 { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.asset-library-layout-v4 > .asset-list { overflow-x: hidden; }
 .asset-list-status { display: flex; align-items: center; justify-content: space-between; gap: 7px; grid-column: 1 / -1; }
 .asset-list-status i { color: #d7ff4b; font-style: normal; font-size: 10px; }
 .asset-list-status i.registered, .asset-list-status i.pending { color: #d2c58b; }
 .asset-list-status i.blocked { color: #ff9b8a; }
 .asset-list-status small { overflow: hidden; color: #8e9c88; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.asset-detail-v3 { min-height: 0; overflow-x: hidden; padding-right: 4px; }
+.asset-detail-v4 { min-height: 0; overflow-x: hidden; padding-right: 4px; }
 .asset-detail-actions { display: flex; min-width: 0; flex-direction: column; gap: 9px; align-items: flex-end; flex: 0 0 auto; }
 .asset-status-stack { display: flex; flex-direction: column; gap: 6px; align-items: end; }
 .asset-status-reason { max-width: 230px; color: #b7a875; font-size: 9px; line-height: 1.45; text-align: right; }
@@ -1476,7 +1476,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .asset-board-wrap .asset-board-card.asset-board-prompt-card { min-height: 500px; height: 500px; max-height: 500px; }
 .asset-board-wrap .asset-board-card.asset-board-prompt-card:has(.asset-board-prompt-media) { min-height: 650px; height: 650px; max-height: 650px; }
 @media (max-width: 900px) {
-  .asset-library-layout-v3 { grid-template-columns: 1fr; grid-template-rows: minmax(0, 260px) minmax(0, 1fr); }
+  .asset-library-layout-v4 { grid-template-columns: 1fr; grid-template-rows: minmax(0, 260px) minmax(0, 1fr); }
   .asset-list { max-height: none; overflow-x: hidden; border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
   .asset-media-grid { grid-template-columns: 1fr; }
   .asset-library-controls { grid-template-columns: minmax(0, 1fr) minmax(140px, .55fr) minmax(120px, .45fr); }
@@ -1918,7 +1918,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 /* 6) 滚动条统一：避免双滚动条、细滚动条在暗色背景下不可见 */
 .studio-content,
-.asset-detail-v3,
+.asset-detail-v4,
 .asset-list,
 .timeline-shot-list,
 .timeline-inspector { scrollbar-color: #6e895f #0f1610; }
@@ -1973,7 +1973,7 @@ select:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; outl
 /* 10) 统一资产库顶部压缩上移：为下方资产列表腾出高度，保持整洁 */
 .asset-library,
 .timeline-view, .story-view, .asset-library, .settings-view { padding-top: 18px; padding-bottom: 32px; }
-.asset-library-v3 { gap: 10px; }
+.asset-library-v4 { gap: 10px; }
 .asset-library-toolbar { gap: 10px; margin: 10px 0 12px; padding: 12px; }
 .asset-library-toolbar-top { gap: 10px; }
 .asset-summary { margin: 10px 0 8px; gap: 8px; }
@@ -1981,9 +1981,9 @@ select:focus-visible { outline: 2px solid var(--acid); outline-offset: 2px; outl
 .asset-summary button { padding: 5px 10px; font-size: 9px; }
 .asset-summary + .asset-library-toolbar,
 .asset-summary + .asset-library-layout,
-.asset-summary + .asset-library-layout-v3 { margin-top: 6px; }
+.asset-summary + .asset-library-layout-v4 { margin-top: 6px; }
 .filter-sort-panel,
-.asset-library-v3 .asset-library-toolbar { margin-top: 8px; }
+.asset-library-v4 .asset-library-toolbar { margin-top: 8px; }
 @media (max-width: 980px) {
   .asset-library, .story-view, .timeline-view, .settings-view { padding: 16px 18px 28px; }
 }

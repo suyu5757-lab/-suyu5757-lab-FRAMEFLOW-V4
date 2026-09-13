@@ -19,7 +19,7 @@ from frameflow.providers import ProviderError, STORYBOARD_OUTPUT_SCHEMA
 
 def project_document() -> dict:
     return {
-        "id": "PRJ_V3", "name": "V3 测试", "ratio": "16:9", "duration": 24,
+        "id": "PRJ_V4", "name": "V4 测试", "ratio": "16:9", "duration": 24,
         "generator": "Seedance 2.5", "brief": "测试工作流图", "stage": 0,
         "sortOrder": 0, "script": "", "assets": [], "shots": [], "audio": {},
         "assetRegulator": {}, "generations": [], "seedancePackages": [],
@@ -69,16 +69,16 @@ def storyboard_shot(shot_id: str, scene_id: str, purpose: str, action: str, beat
     }
 
 
-class FrameflowV3Tests(unittest.TestCase):
+class FrameflowV4Tests(unittest.TestCase):
     def setUp(self) -> None:
-        self.db_path = Path(__file__).parent / f"test-v3-{uuid.uuid4().hex}.db"
+        self.db_path = Path(__file__).parent / f"test-v4-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
         self.db_patch.start()
         self.secret_patch = mock.patch.object(server, "get_secret", return_value=None)
         self.secret_patch.start()
         self.client_context = TestClient(server.app)
         self.client = self.client_context.__enter__()
-        response = self.client.put("/api/v2/projects/PRJ_V3", json={"document": project_document()})
+        response = self.client.put("/api/v2/projects/PRJ_V4", json={"document": project_document()})
         self.assertEqual(response.status_code, 200, response.text)
 
     def tearDown(self) -> None:
@@ -106,30 +106,30 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertIn("lightingCausality", scene_schema["required"])
 
     def test_graph_is_projected_and_revision_conflicts_are_rejected(self) -> None:
-        first = self.client.get("/api/v2/projects/PRJ_V3/graph")
+        first = self.client.get("/api/v2/projects/PRJ_V4/graph")
         self.assertEqual(first.status_code, 200, first.text)
         payload = first.json()
         self.assertEqual(payload["revision"], 1)
         self.assertEqual(len(payload["graph"]["nodes"]), 8)
         payload["graph"]["nodes"][0]["label"] = "新版故事"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": payload["graph"], "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": payload["graph"], "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
         self.assertEqual(saved.json()["revision"], 2)
-        conflict = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": payload["graph"], "expected_revision": 1})
+        conflict = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": payload["graph"], "expected_revision": 1})
         self.assertEqual(conflict.status_code, 409)
 
     def test_execution_cycle_is_rejected_but_reference_cycle_is_allowed(self) -> None:
-        payload = self.client.get("/api/v2/projects/PRJ_V3/graph").json()
+        payload = self.client.get("/api/v2/projects/PRJ_V4/graph").json()
         graph = payload["graph"]
         graph["edges"].append({"id": "cycle", "source": "delivery", "target": "story", "relation": "execution"})
-        response = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph, "expected_revision": 1})
+        response = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph, "expected_revision": 1})
         self.assertEqual(response.status_code, 422)
         graph["edges"][-1]["relation"] = "reference"
-        response = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph, "expected_revision": 1})
+        response = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph, "expected_revision": 1})
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_graph_groups_are_persisted_and_group_cycles_are_rejected(self) -> None:
-        payload = self.client.get("/api/v2/projects/PRJ_V3/graph").json()
+        payload = self.client.get("/api/v2/projects/PRJ_V4/graph").json()
         graph = payload["graph"]
         graph["nodes"].append({
             "id": "group:preflight", "kind": "group", "label": "前期", "position": {"x": 0, "y": 0},
@@ -137,9 +137,9 @@ class FrameflowV3Tests(unittest.TestCase):
             "status": "idle", "version": 1, "locked": False,
         })
         graph["nodes"][0]["config"]["group_id"] = "group:preflight"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph, "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph, "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
-        persisted = self.client.get("/api/v2/projects/PRJ_V3/graph").json()["graph"]
+        persisted = self.client.get("/api/v2/projects/PRJ_V4/graph").json()["graph"]
         self.assertTrue(persisted["nodes"][-1]["config"]["collapsed"])
         self.assertEqual(persisted["nodes"][0]["config"]["group_id"], "group:preflight")
 
@@ -149,21 +149,21 @@ class FrameflowV3Tests(unittest.TestCase):
             "status": "idle", "version": 1, "locked": False,
         })
         persisted["nodes"][-2]["config"]["group_id"] = "group:second"
-        cycle = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": persisted, "expected_revision": 2})
+        cycle = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": persisted, "expected_revision": 2})
         self.assertEqual(cycle.status_code, 422, cycle.text)
 
     def test_approval_estimate_contains_generation_parameters_and_run_snapshot_selection(self) -> None:
-        payload = self.client.get("/api/v2/projects/PRJ_V3/graph").json()
+        payload = self.client.get("/api/v2/projects/PRJ_V4/graph").json()
         graph = payload["graph"]
         generate = next(node for node in graph["nodes"] if node["id"] == "generate")
         generate["config"].update({
             "provider_profile_id": "ark-default", "model": "seedance-2.5", "quantity": 2,
-            "resolution": "1080p", "duration": 8, "seed": 42, "prompt_version": "PROMPT_v3",
+            "resolution": "1080p", "duration": 8, "seed": 42, "prompt_version": "PROMPT_v4",
             "estimated_cost": 1.25,
         })
-        saved = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph, "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph, "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
-        estimate = self.client.post("/api/v2/runs/estimate", json={"project_id": "PRJ_V3", "node_ids": ["delivery"]})
+        estimate = self.client.post("/api/v2/runs/estimate", json={"project_id": "PRJ_V4", "node_ids": ["delivery"]})
         self.assertEqual(estimate.status_code, 200, estimate.text)
         paid = estimate.json()["estimate"]["paid_nodes"][0]
         self.assertEqual(paid["model"], "seedance-2.5")
@@ -171,15 +171,15 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(paid["resolution"], "1080p")
         self.assertEqual(paid["duration"], 8)
         self.assertEqual(paid["seed"], 42)
-        self.assertEqual(paid["prompt_version"], "PROMPT_v3")
-        created = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["delivery"]})
+        self.assertEqual(paid["prompt_version"], "PROMPT_v4")
+        created = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["delivery"]})
         self.assertEqual(created.status_code, 200, created.text)
         detail = self.client.get(f"/api/v2/runs/{created.json()['id']}").json()
         self.assertEqual(detail["request"]["selected_node_ids"], [node["id"] for node in graph["nodes"]])
         self.assertTrue(detail["request"]["approval_required"])
 
     def test_paid_graph_run_requires_approval(self) -> None:
-        response = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["generate"]})
+        response = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["generate"]})
         self.assertEqual(response.status_code, 200, response.text)
         run = response.json()
         self.assertEqual(run["status"], "awaiting_confirmation")
@@ -196,7 +196,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertIsNotNone(gate["approval_consumed_at"])
 
     def test_concurrent_generate_times_ten_returns_one_run_and_one_approval_gate(self) -> None:
-        body = {"project_id": "PRJ_V3", "node_ids": ["generate"], "max_parallel": 3, "confirmed": False}
+        body = {"project_id": "PRJ_V4", "node_ids": ["generate"], "max_parallel": 3, "confirmed": False}
 
         def submit(_: int):
             return self.client.post("/api/v2/runs", json=body)
@@ -219,13 +219,13 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_partial_run_includes_execution_ancestors_in_estimate_and_snapshot(self) -> None:
         estimate = self.client.post("/api/v2/runs/estimate", json={
-            "project_id": "PRJ_V3", "node_ids": ["delivery"],
+            "project_id": "PRJ_V4", "node_ids": ["delivery"],
         })
         self.assertEqual(estimate.status_code, 200, estimate.text)
         self.assertEqual(estimate.json()["estimate"]["node_count"], 8)
         self.assertEqual(estimate.json()["estimate"]["paid_node_count"], 1)
         created = self.client.post("/api/v2/runs", json={
-            "project_id": "PRJ_V3", "node_ids": ["delivery"],
+            "project_id": "PRJ_V4", "node_ids": ["delivery"],
         })
         self.assertEqual(created.status_code, 200, created.text)
         detail = self.client.get(f"/api/v2/runs/{created.json()['id']}")
@@ -233,7 +233,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(len(detail.json()["nodes"]), 8)
 
     def test_runtime_executes_checkpoints_reuses_cache_and_emits_events(self) -> None:
-        first = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["story"]})
+        first = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["story"]})
         self.assertEqual(first.status_code, 200, first.text)
         first_id = first.json()["id"]
         for _ in range(50):
@@ -244,7 +244,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(detail["status"], "succeeded")
         self.assertEqual(detail["nodes"][0]["status"], "succeeded")
 
-        second = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["story"]})
+        second = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["story"]})
         self.assertEqual(second.status_code, 200, second.text)
         second_id = second.json()["id"]
         for _ in range(50):
@@ -258,11 +258,11 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(events.status_code, 200, events.text)
         self.assertIn("node_cached", events.text)
 
-        graph = self.client.get("/api/v2/projects/PRJ_V3/graph").json()
+        graph = self.client.get("/api/v2/projects/PRJ_V4/graph").json()
         graph["graph"]["nodes"][0]["config"]["cache_marker"] = "changed-upstream"
-        changed = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph["graph"], "expected_revision": graph["revision"]})
+        changed = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph["graph"], "expected_revision": graph["revision"]})
         self.assertEqual(changed.status_code, 200, changed.text)
-        third = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["story"]})
+        third = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["story"]})
         self.assertEqual(third.status_code, 200, third.text)
         third_id = third.json()["id"]
         for _ in range(50):
@@ -274,15 +274,15 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(invalidated["nodes"][0]["status"], "succeeded")
 
     def test_runtime_retries_retryable_node_and_classifies_final_failure(self) -> None:
-        graph_response = self.client.get("/api/v2/projects/PRJ_V3/graph")
+        graph_response = self.client.get("/api/v2/projects/PRJ_V4/graph")
         self.assertEqual(graph_response.status_code, 200, graph_response.text)
         graph = graph_response.json()["graph"]
         graph["nodes"][0]["config"] = {
             "executor": "fail", "max_attempts": 2, "error_kind": "rate_limit", "retryable": True,
         }
-        saved = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph, "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph, "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V3", "node_ids": ["story"]})
+        created = self.client.post("/api/v2/runs", json={"project_id": "PRJ_V4", "node_ids": ["story"]})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         for _ in range(50):
@@ -297,20 +297,20 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertIn("node_retry_scheduled", events.text)
 
     def test_timeline_defaults_and_uses_optimistic_revision(self) -> None:
-        first = self.client.get("/api/v2/projects/PRJ_V3/timeline").json()
+        first = self.client.get("/api/v2/projects/PRJ_V4/timeline").json()
         self.assertEqual((first["document"]["width"], first["document"]["height"]), (1920, 1080))
         first["document"]["duration"] = 30
-        saved = self.client.put("/api/v2/projects/PRJ_V3/timeline", json={"document": first["document"], "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/timeline", json={"document": first["document"], "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
         self.assertEqual(saved.json()["revision"], 2)
-        conflict = self.client.put("/api/v2/projects/PRJ_V3/timeline", json={"document": first["document"], "expected_revision": 1})
+        conflict = self.client.put("/api/v2/projects/PRJ_V4/timeline", json={"document": first["document"], "expected_revision": 1})
         self.assertEqual(conflict.status_code, 409)
 
     def test_story_document_is_structured_revisioned_and_checked(self) -> None:
-        first = self.client.get("/api/v2/projects/PRJ_V3/story")
+        first = self.client.get("/api/v2/projects/PRJ_V4/story")
         self.assertEqual(first.status_code, 200, first.text)
         self.assertEqual(first.json()["story"]["script"], "")
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {
                 "creative_goal": "一个人在雨夜找回录音带",
@@ -340,10 +340,10 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(saved.json()["revision"], 2)
         self.assertTrue(saved.json()["checks"]["ok"])
         self.assertEqual(saved.json()["story"]["spec"]["beats"][0]["id"], "B01")
-        versions = self.client.get("/api/v2/projects/PRJ_V3/story/versions")
+        versions = self.client.get("/api/v2/projects/PRJ_V4/story/versions")
         self.assertEqual(versions.status_code, 200, versions.text)
         self.assertEqual(versions.json()["scriptVersions"][-1]["status"], "active")
-        conflict = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        conflict = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "冲突", "duration": 12, "ratio": "16:9"},
             "script": "冲突", "scenes": [], "shots": [],
@@ -351,7 +351,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(conflict.status_code, 409)
 
     def test_story_asset_gap_is_pending_asset_work_not_a_story_blocker(self) -> None:
-        response = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        response = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "资产准备阶段", "duration": 6, "ratio": "16:9"},
             "script": "镜头完成后进入资产生产。",
@@ -376,16 +376,16 @@ class FrameflowV3Tests(unittest.TestCase):
     def test_story_diff_and_rollback_create_new_versions_without_overwriting_history(self) -> None:
         shot = {"id": "SH01", "scene": "SC01", "duration": 4, "purpose": "建立", "size": "近景", "camera": "固定", "action": "按键"}
         base = {"expected_revision": 1, "spec": {"creative_goal": "测试", "duration": 4, "ratio": "16:9"}, "script": "第一版", "scenes": [{"id": "SC01", "name": "室内"}], "shots": [shot]}
-        first = self.client.put("/api/v2/projects/PRJ_V3/story", json=base)
+        first = self.client.put("/api/v2/projects/PRJ_V4/story", json=base)
         self.assertEqual(first.status_code, 200, first.text)
         first_id = first.json()["story"]["script_versions"][-1]["id"]
-        second = self.client.put("/api/v2/projects/PRJ_V3/story", json={**base, "expected_revision": 2, "script": "第二版\n新增转折"})
+        second = self.client.put("/api/v2/projects/PRJ_V4/story", json={**base, "expected_revision": 2, "script": "第二版\n新增转折"})
         self.assertEqual(second.status_code, 200, second.text)
         second_id = second.json()["story"]["script_versions"][-1]["id"]
-        diff = self.client.get(f"/api/v2/projects/PRJ_V3/story/diff?from_version_id={first_id}&to_version_id={second_id}")
+        diff = self.client.get(f"/api/v2/projects/PRJ_V4/story/diff?from_version_id={first_id}&to_version_id={second_id}")
         self.assertEqual(diff.status_code, 200, diff.text)
         self.assertTrue(any(item["type"] == "add" for item in diff.json()["script_diff"]))
-        rolled = self.client.post("/api/v2/projects/PRJ_V3/story/rollback", json={"expected_revision": 3, "version_id": first_id, "scope": "script"})
+        rolled = self.client.post("/api/v2/projects/PRJ_V4/story/rollback", json={"expected_revision": 3, "version_id": first_id, "scope": "script"})
         self.assertEqual(rolled.status_code, 200, rolled.text)
         self.assertEqual(rolled.json()["story"]["script"], "第一版")
         self.assertEqual(rolled.json()["story"]["script_versions"][-1]["source"], "rollback")
@@ -401,7 +401,7 @@ class FrameflowV3Tests(unittest.TestCase):
                 {"id": "SH02", "scene": "SC01", "duration": 16, "purpose": "反应", "size": "近景", "camera": "固定", "action": "回头", "firstFrame": "门打开", "wardrobe": "白色", "generator": "Seedance 2.0"},
             ],
         }
-        response = self.client.put("/api/v2/projects/PRJ_V3/story", json=body)
+        response = self.client.put("/api/v2/projects/PRJ_V4/story", json=body)
         self.assertEqual(response.status_code, 200, response.text)
         checks = response.json()["checks"]
         self.assertTrue(any(issue["code"] == "generator_duration_limit" for issue in checks["issues"]))
@@ -412,9 +412,9 @@ class FrameflowV3Tests(unittest.TestCase):
             {"id": "SH01", "scene": "SC01", "duration": 4, "purpose": "原镜头一", "size": "近景", "camera": "固定", "action": "按键"},
             {"id": "SH02", "scene": "SC01", "duration": 4, "purpose": "保留镜头", "size": "中景", "camera": "推进", "action": "回头"},
         ]
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={"expected_revision": 1, "spec": {"creative_goal": "局部接受", "duration": 8, "ratio": "16:9"}, "script": "原剧本", "scenes": [{"id": "SC01", "name": "室内"}], "shots": base_shots})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={"expected_revision": 1, "spec": {"creative_goal": "局部接受", "duration": 8, "ratio": "16:9"}, "script": "原剧本", "scenes": [{"id": "SC01", "name": "室内"}], "shots": base_shots})
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"goal": "full", "strength": "balanced"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"goal": "full", "strength": "balanced"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {"proposedScript": "候选剧本", "feasibility": {"verdict": "可执行", "difficulty": "low"}, "productionElements": {}, "scenes": [scene_ledger("SC01", "室内", ["SH01", "SH03"])], "shots": [
@@ -426,14 +426,14 @@ class FrameflowV3Tests(unittest.TestCase):
             self.assertEqual(started.status_code, 200, started.text)
             accepted = self.client.post(f"/api/v2/story-runs/{run_id}/accept-storyboard", json={"scope": "shots_only", "shot_ids": ["SH01"]})
             self.assertEqual(accepted.status_code, 200, accepted.text)
-        current = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        current = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         current_by_id = {shot["id"]: shot for shot in current["shots"]}
         self.assertEqual(current_by_id["SH01"]["purpose"], "更新镜头一")
         self.assertIn("SH02", current_by_id)
         self.assertNotIn("SH03", current_by_id)
 
     def test_story_candidate_requires_acceptance_before_active_script_changes(self) -> None:
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={
             "goal": "full", "strength": "balanced", "audience": "短片观众", "platform": "短视频",
         })
         self.assertEqual(created.status_code, 200, created.text)
@@ -453,7 +453,7 @@ class FrameflowV3Tests(unittest.TestCase):
             started = self.client.post(f"/api/v2/story-runs/{run_id}/start")
             self.assertEqual(started.status_code, 200, started.text)
             self.assertEqual(started.json()["run"]["status"], "storyboard_review_required")
-            before_accept = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+            before_accept = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
             self.assertEqual(before_accept["script"], "")
             accepted = self.client.post(f"/api/v2/story-runs/{run_id}/accept-storyboard", json={"scope": "all"})
             self.assertEqual(accepted.status_code, 200, accepted.text)
@@ -461,12 +461,12 @@ class FrameflowV3Tests(unittest.TestCase):
         finalized = self.client.post(f"/api/v2/story-runs/{run_id}/accept-regulator")
         self.assertEqual(finalized.status_code, 200, finalized.text)
         self.assertEqual(finalized.json()["run"]["status"], "succeeded")
-        after_accept = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        after_accept = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         self.assertEqual(after_accept["script"], "候选剧本：他按下播放键。")
         self.assertTrue(any(version.get("status") == "active" and version.get("source") == "agent" for version in after_accept["scriptVersions"]))
 
     def test_accept_script_only_keeps_shot_candidate_review_open_until_shots_are_accepted(self) -> None:
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"goal": "full", "strength": "balanced"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"goal": "full", "strength": "balanced"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {
@@ -489,13 +489,13 @@ class FrameflowV3Tests(unittest.TestCase):
             self.assertEqual(shots_only.status_code, 200, shots_only.text)
             self.assertEqual(shots_only.json()["run"]["status"], "regulator_review_required")
             regulator.assert_awaited_once()
-        current = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        current = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         self.assertEqual(current["script"], candidate["proposedScript"])
         self.assertEqual(current["shots"][0]["id"], "SH01")
 
     def test_explicit_script_duration_overrides_reference_duration_for_story_runs(self) -> None:
         source = "视频时长：13–15秒。少女在机库中抬眼，机甲回应。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "剧本时长优先", "duration": 30, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -505,7 +505,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(saved.status_code, 200, saved.text)
         # Deliberately send the old page reference duration. The server must
         # still derive the run duration and automatic budget from the script.
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={
             "workflow_mode": "optimize_script_and_storyboard",
             "duration": 30,
             "generator_profile": "seedance2.5",
@@ -520,14 +520,14 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(input_package["script_duration"]["minimum"], 13.0)
         self.assertEqual(input_package["script_duration"]["maximum"], 15.0)
         self.assertEqual(input_package["shot_budget"]["automatic_shot_count_max"], 3)
-        story = self.client.get("/api/v2/projects/PRJ_V3/story")
+        story = self.client.get("/api/v2/projects/PRJ_V4/story")
         self.assertEqual(story.status_code, 200, story.text)
         self.assertEqual(story.json()["story"]["spec"]["duration"], 14)
         self.assertEqual(story.json()["story"]["spec"]["duration_source"], "script_explicit")
 
     def test_story_candidate_revision_carries_feedback_and_previous_candidate_context(self) -> None:
         source = "视频时长：8秒。人物在雨夜按下开关。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "候选修订", "duration": 30, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -535,7 +535,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        first = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "optimize_script_and_storyboard", "duration": 30, "generator_profile": "seedance2.5"})
+        first = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "optimize_script_and_storyboard", "duration": 30, "generator_profile": "seedance2.5"})
         self.assertEqual(first.status_code, 200, first.text)
         first_id = first.json()["id"]
         candidate = {
@@ -550,7 +550,7 @@ class FrameflowV3Tests(unittest.TestCase):
         with mock.patch.object(server, "_run_storyboard_agent", new=mock.AsyncMock(return_value=candidate)):
             started = self.client.post(f"/api/v2/story-runs/{first_id}/start")
         self.assertEqual(started.status_code, 200, started.text)
-        revised = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={
+        revised = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={
             "workflow_mode": "optimize_script_and_storyboard",
             "duration": 30,
             "generator_profile": "seedance2.5",
@@ -566,7 +566,7 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_optimized_script_can_be_routed_into_locked_storyboard_without_overwriting_source(self) -> None:
         original = "原始剧本：少女走进机库。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "优化剧本转分镜", "duration": 20, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": original,
@@ -574,7 +574,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        first = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "optimize_script_and_storyboard", "duration": 20, "generator_profile": "seedance2.5"})
+        first = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "optimize_script_and_storyboard", "duration": 20, "generator_profile": "seedance2.5"})
         self.assertEqual(first.status_code, 200, first.text)
         first_id = first.json()["id"]
         optimized_script = "优化拍摄剧本：少女在机库中触碰机甲，蓝光沿机械手点亮。"
@@ -590,7 +590,7 @@ class FrameflowV3Tests(unittest.TestCase):
         with mock.patch.object(server, "_run_storyboard_agent", new=mock.AsyncMock(return_value=candidate)):
             started = self.client.post(f"/api/v2/story-runs/{first_id}/start")
         self.assertEqual(started.status_code, 200, started.text)
-        routed = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={
+        routed = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={
             "workflow_mode": "storyboard_from_source",
             "duration": 20,
             "generator_profile": "seedance2.5",
@@ -613,13 +613,13 @@ class FrameflowV3Tests(unittest.TestCase):
             self.assertEqual(direct_started.json()["run"]["storyboard_output"]["proposedScript"], optimized_script)
             accepted = self.client.post(f"/api/v2/story-runs/{routed_id}/accept-storyboard", json={"scope": "all"})
             self.assertEqual(accepted.status_code, 200, accepted.text)
-        current = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        current = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         self.assertEqual(current["script"], original)
         self.assertEqual(current["shots"][0]["id"], "SH01")
 
     def test_storyboard_from_source_preserves_script_byte_for_byte_on_acceptance(self) -> None:
         source = "原文：雨落在玻璃上。\n\n角色说：不要替我改写这句话……"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "锁定原文", "duration": 60, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -627,7 +627,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={
             "goal": "script_storyboard", "workflow_mode": "storyboard_from_source", "duration": 60, "generator_profile": "seedance2.5",
         })
         self.assertEqual(created.status_code, 200, created.text)
@@ -647,17 +647,17 @@ class FrameflowV3Tests(unittest.TestCase):
             self.assertEqual(started.json()["run"]["storyboard_output"]["proposedScript"], source)
             accepted = self.client.post(f"/api/v2/story-runs/{run_id}/accept-storyboard", json={"scope": "all"})
             self.assertEqual(accepted.status_code, 200, accepted.text)
-        current = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        current = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         self.assertEqual(current["script"], source)
         self.assertFalse(any(version.get("source") == "agent" for version in current.get("scriptVersions", [])))
         self.assertEqual(current["shots"][0]["seedancePlan"]["model"], "seedance2.5")
         self.assertEqual(current["scenes"][0]["spatialGeography"], candidate["scenes"][0]["spatialGeography"])
-        story_after = self.client.get("/api/v2/projects/PRJ_V3/story").json()
+        story_after = self.client.get("/api/v2/projects/PRJ_V4/story").json()
         self.assertNotIn("duration_mismatch", {issue["code"] for issue in story_after["checks"]["issues"]})
 
     def test_storyboard_handoff_merges_repeated_stable_asset_ids(self) -> None:
         source = "锁定原文：角色走上高架。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "去重交接", "duration": 12, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -665,7 +665,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {
@@ -688,7 +688,7 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_storyboard_contract_failure_retries_once_without_retrying_budget_failure(self) -> None:
         source = "锁定原文：雨夜平台。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "合同重试", "duration": 12, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -696,7 +696,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         invalid = {"proposedScript": "错误改写", "feasibility": {"verdict": "可执行", "difficulty": "low"}, "productionElements": {}, "scenes": [], "risks": [], "assetHandoff": {"characters": [], "scenes": [], "props": []}}
@@ -710,7 +710,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertTrue(started.json()["run"]["storyboard_output"].get("contractRepairRetry"))
 
     def test_storyboard_provider_failure_is_not_retried_as_contract_repair(self) -> None:
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         agent = mock.AsyncMock(side_effect=ProviderError("Monthly usage limit reached. Resets in 3 days.", "billing", 402))
@@ -726,7 +726,7 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_storyboard_content_gap_retries_once_then_blocks_acceptance(self) -> None:
         source = "视频时长：12秒。\n角色触碰机械手。\n机甲头部亮起。\n角色说：走吧。\n画面切黑并出现 LINK 标志。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "内容覆盖门禁", "duration": 12, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -734,7 +734,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         incomplete = {
@@ -760,12 +760,12 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertTrue(any(issue["code"] == "storyboard_coverage_missing" for issue in output["blockingIssues"]))
         rejected = self.client.post(f"/api/v2/story-runs/{run_id}/accept-storyboard", json={"scope": "all"})
         self.assertEqual(rejected.status_code, 409, rejected.text)
-        current = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        current = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         self.assertEqual(current["shots"], [])
 
     def test_storyboard_normalization_report_keeps_dropped_shot_and_blocks_candidate(self) -> None:
         source = "角色在机库中抬眼，然后机甲启动。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "标准化诊断", "duration": 8, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -773,7 +773,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 8, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 8, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {
@@ -798,7 +798,7 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_storyboard_complete_coverage_can_use_fewer_than_automatic_target_shots(self) -> None:
         source = "角色触碰机械手。机甲头部亮起。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={
             "expected_revision": 1,
             "spec": {"creative_goal": "覆盖优先", "duration": 12, "ratio": "16:9", "generator_profile": "seedance2.5"},
             "script": source,
@@ -806,7 +806,7 @@ class FrameflowV3Tests(unittest.TestCase):
             "shots": [],
         })
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {
@@ -831,7 +831,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertNotIn("shot_budget_exceeded", str(output.get("blockingIssues") or []))
 
     def test_storyboard_candidate_over_explicit_manual_budget_is_rejected_before_acceptance(self) -> None:
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"goal": "full", "workflow_mode": "optimize_script_and_storyboard", "duration": 60, "generator_profile": "seedance2.0", "shot_budget_source": "manual", "shot_count_min": 3, "shot_count_target": 3, "shot_count_max": 3})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"goal": "full", "workflow_mode": "optimize_script_and_storyboard", "duration": 60, "generator_profile": "seedance2.0", "shot_budget_source": "manual", "shot_count_min": 3, "shot_count_target": 3, "shot_count_max": 3})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         shots = [{"id": f"SH{index:02d}", "scene": "C01", "duration": 7, "purpose": f"事件 {index}", "size": "中景", "camera": "固定", "action": "动作"} for index in range(1, 10)]
@@ -843,9 +843,9 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(self.client.get(f"/api/v2/story-runs/{run_id}").json()["run"]["status"], "failed")
 
     def test_automatic_shot_range_is_advisory_and_does_not_block_candidate(self) -> None:
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={"expected_revision": 1, "spec": {"creative_goal": "参考范围", "duration": 20, "ratio": "16:9", "generator_profile": "seedance2.5"}, "script": "四个独立事件组成一段连续分镜。", "scenes": [], "shots": []})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={"expected_revision": 1, "spec": {"creative_goal": "参考范围", "duration": 20, "ratio": "16:9", "generator_profile": "seedance2.5"}, "script": "四个独立事件组成一段连续分镜。", "scenes": [], "shots": []})
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"goal": "full", "workflow_mode": "storyboard_from_source", "duration": 20, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"goal": "full", "workflow_mode": "storyboard_from_source", "duration": 20, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         shots = [{"id": f"SH{index:02d}", "scene": "S001", "duration": 5, "purpose": f"事件 {index}", "size": "中景", "camera": "固定", "action": "动作", "visibleEvent": "动作发生", "eventConsequence": "状态发生可见变化", "seedancePlan": {"model": "seedance2.5", "generationMode": "reference_to_video"}, "continuity": {"cutIn": "前镜头衔接", "cutOut": "后镜头衔接"}} for index in range(1, 5)]
@@ -861,9 +861,9 @@ class FrameflowV3Tests(unittest.TestCase):
 
     def test_direct_storyboard_normalises_common_provider_aliases_before_contract_validation(self) -> None:
         source = "少女在机库中触碰机甲，随后抬眼。"
-        saved = self.client.put("/api/v2/projects/PRJ_V3/story", json={"expected_revision": 1, "spec": {"creative_goal": "直转容错", "duration": 14, "ratio": "16:9", "generator_profile": "seedance2.5"}, "script": source, "scenes": [], "shots": []})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/story", json={"expected_revision": 1, "spec": {"creative_goal": "直转容错", "duration": 14, "ratio": "16:9", "generator_profile": "seedance2.5"}, "script": source, "scenes": [], "shots": []})
         self.assertEqual(saved.status_code, 200, saved.text)
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 14, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"workflow_mode": "storyboard_from_source", "duration": 14, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {"proposedScript": "供应商不应替换原文", "feasibility": {"verdict": "可执行", "difficulty": "low"}, "productionElements": {}, "scenes": [scene_ledger("S001", "机库", [])], "shots": [{"shotId": "SH01", "sceneId": "S001", "durationSeconds": "00:00–00:07.00", "goal": "建立人机关系", "framing": "近景", "cameraMovement": "缓慢推进", "visualEvent": "白色手套触碰机械手", "consequence": "青蓝接口灯亮起"}], "risks": [], "assetHandoff": {"characters": [], "scenes": [], "props": []}}
@@ -882,7 +882,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertTrue(output["normalizationWarnings"])
 
     def test_asset_handoff_acceptance_persists_reference_roles_and_receipt(self) -> None:
-        created = self.client.post("/api/v2/projects/PRJ_V3/story/runs", json={"goal": "full", "duration": 12, "generator_profile": "seedance2.5"})
+        created = self.client.post("/api/v2/projects/PRJ_V4/story/runs", json={"goal": "full", "duration": 12, "generator_profile": "seedance2.5"})
         self.assertEqual(created.status_code, 200, created.text)
         run_id = created.json()["id"]
         candidate = {
@@ -913,7 +913,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(receipt["shotAssetEdges"], 1)
         self.assertEqual(receipt["referenceAssetEdges"], 1)
         self.assertIn("C001", receipt["resolvedAssetIds"])
-        project = self.client.get("/api/v2/projects/PRJ_V3").json()["document"]
+        project = self.client.get("/api/v2/projects/PRJ_V4").json()["document"]
         prop = next(asset for asset in project["assets"] if asset["id"] == "P001")
         self.assertEqual(prop["assetMetadata"]["generationReferenceAssets"][0]["role"], "尺度与手持关系")
 
@@ -923,30 +923,30 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertNotIn("credential_ref", response.text)
         self.assertNotIn("api_key", response.text.lower())
 
-    def test_v3_root_is_served_and_old_studio_entry_is_not_runtime_surface(self) -> None:
+    def test_v4_root_is_served_and_old_studio_entry_is_not_runtime_surface(self) -> None:
         root = self.client.get("/")
         self.assertEqual(root.status_code, 200, root.text)
         self.assertIn('id="root"', root.text)
         self.assertEqual(self.client.get("/studio/").status_code, 404)
 
     def test_custom_template_can_be_created_and_applied_with_revision(self) -> None:
-        graph = self.client.get("/api/v2/projects/PRJ_V3/graph").json()["graph"]
+        graph = self.client.get("/api/v2/projects/PRJ_V4/graph").json()["graph"]
         graph["template_id"] = "custom:smoke"
         created = self.client.post("/api/v2/workflow-templates", json={
             "id": "custom:smoke", "name": "测试模板", "description": "模板测试", "category": "test", "graph": graph,
         })
         self.assertEqual(created.status_code, 200, created.text)
-        applied = self.client.post("/api/v2/projects/PRJ_V3/apply-template", json={
+        applied = self.client.post("/api/v2/projects/PRJ_V4/apply-template", json={
             "template_id": "custom:smoke", "expected_revision": 1,
         })
         self.assertEqual(applied.status_code, 200, applied.text)
         self.assertEqual(applied.json()["graph"]["template_id"], "custom:smoke")
-        conflict = self.client.post("/api/v2/projects/PRJ_V3/apply-template", json={
+        conflict = self.client.post("/api/v2/projects/PRJ_V4/apply-template", json={
             "template_id": "custom:smoke", "expected_revision": 1,
         })
         self.assertEqual(conflict.status_code, 409)
 
-    def test_provider_v3_probe_and_route_preview_are_safe(self) -> None:
+    def test_provider_v4_probe_and_route_preview_are_safe(self) -> None:
         with mock.patch.object(server, "probe_profile", new=mock.AsyncMock(return_value={
             "ok": True, "models": ["test-model"], "capabilities": ["orchestrator"], "model_readiness": {},
         })), mock.patch.object(server, "get_profile_secret", return_value="test-secret"):
@@ -994,8 +994,8 @@ class FrameflowV3Tests(unittest.TestCase):
                 return {"capabilities": ["orchestrator"]}
 
         with mock.patch.object(server, "adapter_for_profile", return_value=FakeAdapter()), mock.patch.object(server, "get_profile_secret", return_value="test-secret"):
-            created = self.client.post("/api/v2/projects/PRJ_V3/agent/plans", json={
-                "project_id": "PRJ_V3", "message": "为故事节点增加连续性检查，并草拟脚本候选。",
+            created = self.client.post("/api/v2/projects/PRJ_V4/agent/plans", json={
+                "project_id": "PRJ_V4", "message": "为故事节点增加连续性检查，并草拟脚本候选。",
                 "selected_node_ids": ["story"], "graph_revision": 1, "project_revision": 1,
                 "context": {"selected_role": "导演"}, "cost_boundary": {"currency": "USD", "max_cost": 5},
             })
@@ -1006,7 +1006,7 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(plan["input_snapshot"]["execution_boundaries"]["agent_never_executes_media"], True)
         self.assertEqual(plan["preview"]["added"]["nodes"][0]["id"], "agent-review")
         self.assertEqual(plan["preview"]["candidates"][0]["kind"], "script")
-        self.assertEqual(self.client.get("/api/v2/projects/PRJ_V3").json()["document"]["script"], "")
+        self.assertEqual(self.client.get("/api/v2/projects/PRJ_V4").json()["document"]["script"], "")
 
         applied = self.client.post(f"/api/v2/agent/plans/{plan['id']}/apply", json={
             "expected_project_revision": 1, "expected_graph_revision": 1, "detail": {"approved_by": "test"},
@@ -1014,24 +1014,24 @@ class FrameflowV3Tests(unittest.TestCase):
         self.assertEqual(applied.status_code, 200, applied.text)
         self.assertEqual(applied.json()["status"], "applied")
         self.assertEqual(applied.json()["graph_revision"], 2)
-        candidates = self.client.get("/api/v2/projects/PRJ_V3/agent/candidates")
+        candidates = self.client.get("/api/v2/projects/PRJ_V4/agent/candidates")
         self.assertEqual(candidates.status_code, 200, candidates.text)
         self.assertEqual(candidates.json()["candidates"][0]["status"], "candidate")
-        self.assertEqual(self.client.get("/api/v2/projects/PRJ_V3/graph").json()["graph"]["nodes"][-1]["id"], "agent-review")
+        self.assertEqual(self.client.get("/api/v2/projects/PRJ_V4/graph").json()["graph"]["nodes"][-1]["id"], "agent-review")
         again = self.client.post(f"/api/v2/agent/plans/{plan['id']}/apply", json={})
         self.assertEqual(again.status_code, 409)
 
     def test_agent_patch_preview_rejects_locked_node_and_revision_conflict(self) -> None:
-        graph = self.client.get("/api/v2/projects/PRJ_V3/graph").json()
+        graph = self.client.get("/api/v2/projects/PRJ_V4/graph").json()
         graph["graph"]["nodes"][0]["locked"] = True
-        saved = self.client.put("/api/v2/projects/PRJ_V3/graph", json={"graph": graph["graph"], "expected_revision": 1})
+        saved = self.client.put("/api/v2/projects/PRJ_V4/graph", json={"graph": graph["graph"], "expected_revision": 1})
         self.assertEqual(saved.status_code, 200, saved.text)
         preview = self.client.post("/api/v2/agent/patches/preview", json={
-            "project_id": "PRJ_V3", "graph_revision": 2, "patch": {"modify_nodes": [{"node_id": "story", "label": "不应修改"}]},
+            "project_id": "PRJ_V4", "graph_revision": 2, "patch": {"modify_nodes": [{"node_id": "story", "label": "不应修改"}]},
         })
         self.assertEqual(preview.status_code, 422, preview.text)
         conflict = self.client.post("/api/v2/agent/patches/preview", json={
-            "project_id": "PRJ_V3", "graph_revision": 1, "patch": {},
+            "project_id": "PRJ_V4", "graph_revision": 1, "patch": {},
         })
         self.assertEqual(conflict.status_code, 409, conflict.text)
 
@@ -1041,7 +1041,7 @@ class FrameflowV3Tests(unittest.TestCase):
             for artifact_id in ("ART_PARENT", "ART_CHILD"):
                 connection.execute(
                     "INSERT INTO artifacts(id,project_id,artifact_type,local_path,sha256,created_at) VALUES(?,?,?,?,?,?)",
-                    (artifact_id, "PRJ_V3", "image", f"{artifact_id}.png", artifact_id, now),
+                    (artifact_id, "PRJ_V4", "image", f"{artifact_id}.png", artifact_id, now),
                 )
         created = self.client.post("/api/v2/artifacts/ART_CHILD/lineage", json={
             "parent_artifact_id": "ART_PARENT", "relation": "reference", "node_id": "story",
@@ -1062,7 +1062,7 @@ class FrameflowMigrationTests(unittest.TestCase):
             if candidate.is_file():
                 candidate.unlink()
 
-    def test_v3_migration_is_idempotent_and_rollback_keeps_project_json(self) -> None:
+    def test_v4_migration_is_idempotent_and_rollback_keeps_project_json(self) -> None:
         first = Database(self.db_path)
         document = {"id": "KEEP", "name": "迁移保留", "unknown_field": {"safe": True}}
         with first.connect() as connection:

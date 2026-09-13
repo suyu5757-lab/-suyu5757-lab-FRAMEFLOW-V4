@@ -1,4 +1,4 @@
-"""Derived project dashboard state for the FrameFlow V3 home screen.
+"""Derived project dashboard state for the FrameFlow V4 home screen.
 
 The dashboard is a read-only projection. It deliberately does not persist a
 second set of project or stage statuses; callers provide the current project

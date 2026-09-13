@@ -183,7 +183,7 @@ class AssetIntakeStreamingTests(unittest.TestCase):
             data={"asset_class": "video" if filename.endswith(".mp4") else "scene", "asset_role": "shot_video" if filename.endswith(".mp4") else "environment", "source_type": "test"},
         )
 
-    def test_v3_intake_preserves_multichunk_video_bytes_hash_and_pending_authority(self) -> None:
+    def test_v4_intake_preserves_multichunk_video_bytes_hash_and_pending_authority(self) -> None:
         payload = VIDEO_STUB + b"v" * (UPLOAD_CHUNK * 2 + 29)
         response = self._upload("multi-chunk.mp4", payload)
         self.assertEqual(response.status_code, 200, response.text)
@@ -201,7 +201,7 @@ class AssetIntakeStreamingTests(unittest.TestCase):
         self.assertEqual(row["count"], 1)
         self.assertEqual(versions["count"], 0)
 
-    def test_v3_intake_accepts_valid_small_image(self) -> None:
+    def test_v4_intake_accepts_valid_small_image(self) -> None:
         response = self._upload("small.png", PNG_1X1)
         self.assertEqual(response.status_code, 200, response.text)
         artifact = response.json()["artifact"]

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 import server
 
 
-class FrameflowV3SettingsTests(unittest.TestCase):
+class FrameflowV4SettingsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-settings-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
@@ -29,12 +29,12 @@ class FrameflowV3SettingsTests(unittest.TestCase):
             if path.is_file():
                 path.unlink()
 
-    def test_settings_overview_is_v3_only_and_redacted(self) -> None:
+    def test_settings_overview_is_v4_only_and_redacted(self) -> None:
         response = self.client.get("/api/v2/settings")
         self.assertEqual(response.status_code, 200, response.text)
         payload = response.json()
         self.assertEqual(payload["settings_version"], "3.0")
-        self.assertEqual(payload["system"]["runtime"], "v3-only")
+        self.assertEqual(payload["system"]["runtime"], "v4-only")
         self.assertGreaterEqual(len(payload["providers"]), 3)
         self.assertIn("orchestrator", payload["capabilities"])
         orchestrator = next(item for item in payload["bindings"] if item["capability"] == "orchestrator")
@@ -238,7 +238,7 @@ class FrameflowV3SettingsTests(unittest.TestCase):
         self.assertFalse(provider["last_probe"]["ok"])
         self.assertEqual(provider["last_probe"]["checked_at"], payload["checked_at"])
 
-    def test_capability_binding_rejects_disabled_provider_and_accepts_v3_binding(self) -> None:
+    def test_capability_binding_rejects_disabled_provider_and_accepts_v4_binding(self) -> None:
         accepted = self.client.put("/api/v2/settings/capability-bindings", json={"capability": "orchestrator", "provider_profile_id": "opencode-default", "model": None})
         self.assertEqual(accepted.status_code, 200, accepted.text)
         self.assertEqual(accepted.json()["binding"]["provider_profile_id"], "opencode-default")

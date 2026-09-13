@@ -1,4 +1,4 @@
-"""Unified non-OpenAI provider contracts for FrameFlow V3."""
+"""Unified non-OpenAI provider contracts for FrameFlow V4."""
 
 from __future__ import annotations
 

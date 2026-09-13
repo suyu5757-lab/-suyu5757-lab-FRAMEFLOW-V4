@@ -1,4 +1,4 @@
-"""Supervised Agent planning primitives for FrameFlow V3.
+"""Supervised Agent planning primitives for FrameFlow V4.
 
 The Agent is deliberately limited to producing a reviewable, versioned patch.
 This module contains no project writes and no Provider calls; the API layer is
@@ -11,7 +11,7 @@ import json
 from copy import deepcopy
 from typing import Any
 
-from .schemas import AgentPatchV3, AgentWorkspaceOperationV3, WorkflowGraphV3
+from .schemas import AgentPatchV4, AgentWorkspaceOperationV4, WorkflowGraphV4
 
 
 AUTOMATIC_ACTIONS = {
@@ -424,7 +424,7 @@ def normalize_agent_patch(
     contract_snapshot: dict[str, Any] | None = None,
     attachment_ids: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Normalize a Provider result and legacy assistant patch to the V3 shape."""
+    """Normalize a Provider result and legacy assistant patch to the V4 shape."""
     payload = redact(_payload_from_provider(provider_result))
     raw_patch = payload.get("patch") if isinstance(payload.get("patch"), dict) else payload
     raw_patch = dict(raw_patch or {})
@@ -524,7 +524,7 @@ def normalize_agent_patch(
     patch["actions"] = sorted(actions)
     return {
         "reply": str(payload.get("reply") or payload.get("message") or "已生成 Agent 结构化计划。"),
-        "patch": AgentPatchV3.model_validate(patch).model_dump(mode="json"),
+        "patch": AgentPatchV4.model_validate(patch).model_dump(mode="json"),
         "actions": sorted(actions),
         "next_skill": payload.get("next_skill"),
         "requires_confirmation": patch["requires_confirmation"],
@@ -534,11 +534,11 @@ def normalize_agent_patch(
 
 
 def ensure_workspace_operations(
-    patch: AgentPatchV3,
+    patch: AgentPatchV4,
     graph: dict[str, Any],
     contract_snapshot: dict[str, Any] | None = None,
     attachment_ids: list[str] | None = None,
-) -> AgentPatchV3:
+) -> AgentPatchV4:
     """Attach deterministic operation IDs to graph changes for item-level review."""
 
     snapshot = dict(contract_snapshot or {})
@@ -607,14 +607,14 @@ def ensure_workspace_operations(
             "before": edges.get(edge_id), "after": None, "content": None, "source_attachment_ids": source_ids,
             "source_refs": [], "contract_snapshot": snapshot, "risk": "blocked", "requires_confirmation": True,
         })
-    return patch.model_copy(update={"workspace_operations": [AgentWorkspaceOperationV3.model_validate(item) for item in operations]})
+    return patch.model_copy(update={"workspace_operations": [AgentWorkspaceOperationV4.model_validate(item) for item in operations]})
 
 
 def _change_fields(change: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in change.items() if key not in {"node_id", "edge_id"} and value is not None}
 
 
-def apply_patch_to_graph(graph: dict[str, Any], patch: AgentPatchV3) -> dict[str, Any]:
+def apply_patch_to_graph(graph: dict[str, Any], patch: AgentPatchV4) -> dict[str, Any]:
     """Apply only graph operations; candidates and execution suggestions remain external."""
     result = deepcopy(graph)
     nodes = {str(node["id"]): node for node in result.get("nodes", [])}
@@ -655,12 +655,12 @@ def apply_patch_to_graph(graph: dict[str, Any], patch: AgentPatchV3) -> dict[str
     result["nodes"] = list(nodes.values())
     result["edges"] = list(edges.values())
     # Import lazily to keep this module independent from the API module.
-    from .v3 import validate_graph
-    validate_graph(WorkflowGraphV3.model_validate(result))
+    from .v4 import validate_graph
+    validate_graph(WorkflowGraphV4.model_validate(result))
     return result
 
 
-def patch_preview(graph: dict[str, Any], patch: AgentPatchV3) -> dict[str, Any]:
+def patch_preview(graph: dict[str, Any], patch: AgentPatchV4) -> dict[str, Any]:
     original_nodes = {str(node["id"]): node for node in graph.get("nodes", [])}
     original_edges = {str(edge["id"]): edge for edge in graph.get("edges", [])}
     proposed = apply_patch_to_graph(graph, patch)

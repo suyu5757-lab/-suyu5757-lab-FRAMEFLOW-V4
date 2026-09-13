@@ -38,7 +38,7 @@ def project_document(project_id: str = "PRJ_MAINTENANCE") -> dict:
     }
 
 
-class MaintenanceV3Tests(unittest.TestCase):
+class MaintenanceV4Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-maintenance-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
@@ -77,7 +77,7 @@ class MaintenanceV3Tests(unittest.TestCase):
         self.assertEqual(restored.status_code, 200, restored.text)
         self.assertEqual(len(self.client.get("/api/v2/projects").json()["projects"]), 1)
 
-    def test_delete_blocks_active_v3_runs_and_cleans_after_completion(self) -> None:
+    def test_delete_blocks_active_v4_runs_and_cleans_after_completion(self) -> None:
         kept = self.client.put("/api/v2/projects/PRJ_KEEP", json={"document": project_document("PRJ_KEEP")})
         self.assertEqual(kept.status_code, 200, kept.text)
         run_id = "RUN_MAINTENANCE"

@@ -23,7 +23,7 @@ def project_document(project_id: str) -> dict:
         "name": "声音助手测试项目",
         "ratio": "16:9",
         "duration": 10,
-        "generator": "V3 local",
+        "generator": "V4 local",
         "brief": "测试声音前置准备",
         "assets": [{
             "id": "AUD001",

@@ -2068,7 +2068,7 @@ function SettingsView({ settings, busy, onRefresh, onSaveProvider, onAddPreset, 
     if (saved) setDraft((current) => ({ ...current, modelConfig: JSON.stringify(config, null, 2) }));
     setSaveFeedback(saved ? { kind: 'success', text: '保存成功 · Provider 配置已写入' } : { kind: 'error', text: '保存失败 · 请查看顶部提示' });
   };
-  if (!settings) return <div className="empty-state">正在读取 V3 设置控制面…</div>;
+  if (!settings) return <div className="empty-state">正在读取 V4 设置控制面…</div>;
   const routeSummary = (['orchestrator', 'tts', 'image', 'video'] as const).map((capability) => {
     const binding = settings.bindings.find((item) => item.capability === capability);
     const provider = providers.find((item) => item.id === binding?.provider_profile_id);
@@ -2085,7 +2085,7 @@ function SettingsView({ settings, busy, onRefresh, onSaveProvider, onAddPreset, 
     return { capability, providerName: provider?.display_name || '—', model, status, statusClass, region };
   });
   return <section className="settings-view">
-    <header className="settings-heading"><div><span>V3 CONTROL PLANE</span><h2>设置与 Provider 控制面</h2><p>管理模型接入、系统凭据和本地运行环境；Provider 状态变化会自动更新运行路由。所有配置均属于 V3，不兼容旧版接口。</p></div><button onClick={onRefresh} disabled={busy}>重新检测全部状态</button></header>
+    <header className="settings-heading"><div><span>V4 CONTROL PLANE</span><h2>设置与 Provider 控制面</h2><p>管理模型接入、系统凭据和本地运行环境；Provider 状态变化会自动更新运行路由。所有配置均属于 V4，不兼容旧版接口。</p></div><button onClick={onRefresh} disabled={busy}>重新检测全部状态</button></header>
     <div className="settings-health-grid">
       <article className="settings-health-card"><small>运行时</small><strong>{settings.system.runtime.toUpperCase()}</strong><span>FrameFlow {settings.system.version} · Schema {settings.system.schema_version}</span></article>
       <article className={`settings-health-card ${settings.system.keyring.available ? 'ok' : 'danger'}`}><small>系统凭据库</small><strong>{settings.system.keyring.available ? '可用' : '不可用'}</strong><span>{settings.system.keyring.backend || '未发现可用后端'}</span></article>
@@ -2103,7 +2103,7 @@ function SettingsView({ settings, busy, onRefresh, onSaveProvider, onAddPreset, 
         <div className="settings-presets"><div className="settings-presets-heading"><small>快速接入预设</small><span>删除配置后仍可重新添加</span></div>{presets.map((preset: SettingsPreset) => { const presetView = buildSettingsPresetView(preset, providers); return <button key={preset.preset_id} className={presetView.provider ? 'settings-preset-installed' : ''} aria-label={presetView.provider ? `打开 ${preset.display_name} 当前配置` : `添加 ${preset.display_name} Provider`} onClick={() => presetView.provider ? selectProvider(presetView.provider) : onAddPreset(preset.preset_id)} disabled={busy}><b>{presetView.provider ? `打开 ${preset.display_name}` : preset.display_name}</b><span className="settings-preset-status">{presetView.status}</span><span className="settings-preset-detail">{presetView.detail}</span></button>; })}</div>
       </aside>
         <div className="settings-editor">
-          <div className="settings-editor-heading"><div><small>{isCreating ? 'NEW PROVIDER' : 'PROVIDER PROFILE'}</small><h3>{isCreating ? '创建新的 V3 Provider' : selected?.display_name || '选择 Provider'}</h3></div>{selected && <div className="settings-editor-actions"><button onClick={async () => { setProbePendingId(selected.id); try { await onProbe(selected.id); } finally { setProbePendingId(null); } }} disabled={busy}>连接探测</button>{providerManagementMode && <button className="danger-button" onClick={() => onDeleteProvider(selected.id)} disabled={busy}>删除配置</button>}</div>}</div>
+          <div className="settings-editor-heading"><div><small>{isCreating ? 'NEW PROVIDER' : 'PROVIDER PROFILE'}</small><h3>{isCreating ? '创建新的 V4 Provider' : selected?.display_name || '选择 Provider'}</h3></div>{selected && <div className="settings-editor-actions"><button onClick={async () => { setProbePendingId(selected.id); try { await onProbe(selected.id); } finally { setProbePendingId(null); } }} disabled={busy}>连接探测</button>{providerManagementMode && <button className="danger-button" onClick={() => onDeleteProvider(selected.id)} disabled={busy}>删除配置</button>}</div>}</div>
          {selected && <section className={`settings-connection-result ${probeStatusClass}`} role="status" aria-live="polite"><div className="settings-connection-heading"><small>CONNECTION STATUS</small><strong>{probeStatus}</strong><span>{currentCredentialMissing ? `当前${runtimeMinimaxLabel}尚未配置独立 API Key，请在下方凭据卡写入后再探测。` : probe?.error_kind === 'auth' ? authCredentialHint : probe?.error ? String(probe.error) : probePending ? '正在验证接入点、认证与可用模型，请稍候…' : probe?.ok === true ? `Provider 已响应，当前区域：${selected.provider_type === 'minimax' ? runtimeMinimaxLabel : '默认接入点'}。下面的数据来自最近一次探测。` : '点击右上角“连接探测”获取实时状态。'}</span></div><dl><div><dt>延迟</dt><dd>{probe?.latency_ms != null ? `${Number(probe.latency_ms)} ms` : '—'}</dd></div><div><dt>可用模型</dt><dd>{probeModels.length ? `${probeModels.length} 个` : '—'}</dd></div><div><dt>声明能力</dt><dd>{probeCapabilities.length ? probeCapabilities.map((capability) => settingsCapabilityLabels[String(capability)] || String(capability)).join('、') : '—'}</dd></div>{selected.provider_type === 'minimax' && <div><dt>可用音色</dt><dd>{probeVoices.length ? `${probeVoices.length} 个` : '—'}</dd></div>}<div><dt>最近检测</dt><dd>{probe?.checked_at ? new Date(Number(probe.checked_at) * 1000).toLocaleString('zh-CN') : '—'}</dd></div>{probe?.server_version != null && <div><dt>Server 版本</dt><dd>{String(probe.server_version)}</dd></div>}</dl>{selected.provider_type === 'minimax' && probeVoices.length > 0 && <p className="settings-help">音色 ID：{probeVoices.slice(0, 12).map((voice) => String(voice.voice_id || voice.id || '')).filter(Boolean).join('、')}{probeVoices.length > 12 ? ' …' : ''}</p>}</section>}
           <div className="settings-form-grid"><label>显示名称<input value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} /></label><label>Provider 类型<select value={draft.providerType} disabled={!isCreating} onChange={(event) => setDraft({ ...draft, providerType: event.target.value, capabilities: [] })}>{settingsProviderTypes.map((type) => <option key={type} value={type}>{settingsProviderLabels[type]}</option>)}</select></label>{draft.providerType === 'jimeng_cli' ? <label className="settings-wide">CLI 可执行文件（只填写程序路径）<input value={draft.cliExecutable} onChange={(event) => setDraft({ ...draft, cliExecutable: event.target.value })} placeholder="dreamina 或 dreamina.exe 的完整路径" /><small className="settings-field-help">不要把 curl 安装命令填在这里；安装命令请在终端执行，成功后这里保持为 dreamina。</small></label> : <label className="settings-wide">Base URL<input value={draft.baseUrl} onChange={(event) => setDraft({ ...draft, baseUrl: event.target.value })} placeholder="https://… 或本机 http://127.0.0.1…" /></label>}</div>
           <div className="settings-capability-picker"><span>支持能力</span>{Object.entries(settingsCapabilityLabels).map(([capability, label]) => { const supported = supportedCapabilities.includes(capability); return <label className={supported ? '' : 'unsupported'} key={capability}><input type="checkbox" checked={draft.capabilities.includes(capability)} disabled={!supported} onChange={() => toggleCapability(capability)} />{label}{!supported && <small>不支持</small>}</label>; })}{unsupportedSelectedCapabilities.length > 0 && <p className="settings-capability-help">当前配置中存在不受此 Provider 适配器支持的能力，保存时会自动忽略这些选项。</p>}<p className="settings-capability-explain">{draft.providerType === 'opencode' ? '这里表示 Provider 适配器可以承担的能力，不是单个 Go 模型的媒体生成能力。OpenCode Go 负责文本编排；图片、视频、声音等任务会按自动运行路由交给其他 Provider。' : '这里表示当前 Provider 适配器可以承担的能力；具体模型仍以连接探测和自动运行路由为准。'}</p></div>
@@ -2116,7 +2116,7 @@ function SettingsView({ settings, busy, onRefresh, onSaveProvider, onAddPreset, 
         {!isCreating && selected && (selected.provider_type === 'jimeng_cli' ? <section className="settings-credential-card"><div className="settings-subheading"><small>LOCAL CLI LOGIN</small><h4>即梦本机登录态</h4><p>{selected.credential_configured ? 'CLI 已检测到本机登录态。' : '不填写 API Key；请先安装官方 CLI，并运行 dreamina login 或 dreamina login --headless。'}</p></div><small className="settings-security-note">登录态由官方 dreamina CLI 自己管理，FrameFlow 不读取、不保存 Cookie 或 token。</small></section> : selected.provider_type !== 'minimax' ? <section className="settings-credential-card"><div className="settings-subheading"><small>CREDENTIALS</small><h4>系统凭据库</h4><p>{selected.credential_configured ? `当前状态：已配置 ${selected.credential_mask || '••••••••'}` : selected.provider_type === 'opencode' || selected.provider_type === 'comfyui' ? '当前 Provider 可以不配置密钥，连接由本地服务决定。' : '当前状态：未配置 API Key'}</p></div><div className="settings-credential-actions"><input type="password" value={secret} onChange={(event) => setSecret(event.target.value)} placeholder="输入后仅写入系统凭据库，不会保存到网页" autoComplete="off"/><button onClick={() => { onWriteCredential(selected.id, secret); setSecret(''); }} disabled={busy || !secret}>写入凭据库</button><select value={environmentVariable} onChange={(event) => setEnvironmentVariable(event.target.value)}><option>{settingsEnvForType[selected.provider_type] || 'OPENCODE_SERVER_PASSWORD'}</option><option>OPENCODE_SERVER_PASSWORD</option><option>COMFYUI_API_KEY</option><option>MINIMAX_API_KEY</option></select><button onClick={() => onImportCredential(selected.id, environmentVariable)} disabled={busy}>导入环境变量</button><button className="danger-button" onClick={() => onClearCredential(selected.id)} disabled={busy}>清除系统凭据</button></div><small className="settings-security-note">API Key 不回显、不进入项目 JSON、运行快照、日志、前端 localStorage 或 Provider 探测结果。</small></section> : null)}
        </div>
     </div>
-    <section className="settings-security-panel"><div><small>SECURITY BOUNDARY</small><h3>安全与费用规则</h3></div><ul><li>付费媒体调用必须通过 V3 审批门，设置页不会直接触发生成。</li><li>密钥只进入系统凭据库；清除操作只清除系统存储，不修改环境变量。</li><li>Provider 探测只展示脱敏状态、延迟、能力和模型目录。</li><li>新结果保留为独立版本；设置变更不会覆盖项目、资产或时间线内容。</li></ul></section>
+    <section className="settings-security-panel"><div><small>SECURITY BOUNDARY</small><h3>安全与费用规则</h3></div><ul><li>付费媒体调用必须通过 V4 审批门，设置页不会直接触发生成。</li><li>密钥只进入系统凭据库；清除操作只清除系统存储，不修改环境变量。</li><li>Provider 探测只展示脱敏状态、延迟、能力和模型目录。</li><li>新结果保留为独立版本；设置变更不会覆盖项目、资产或时间线内容。</li></ul></section>
   </section>;
 }
 
@@ -2195,7 +2195,7 @@ function Studio() {
   const [run, setRun] = useState<WorkflowRun | null>(null);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState('V3 工作台已连接');
+  const [notice, setNotice] = useState('V4 工作台已连接');
   const [autoSaveState, setAutoSaveState] = useState<AutoSaveState>('idle');
   const [autoSaveError, setAutoSaveError] = useState('');
   const [autoSaveErrorOpen, setAutoSaveErrorOpen] = useState(false);
@@ -3238,7 +3238,7 @@ function Studio() {
     setBusy(true);
     try {
       setSettings(await studioApi.settings());
-      setNotice('V3 设置状态已重新检测');
+      setNotice('V4 设置状态已重新检测');
     } catch (error) {
       setNotice((error as Error).message);
     } finally { setBusy(false); }
@@ -3260,7 +3260,7 @@ function Studio() {
   const saveSettingsProvider = (providerId: string | null, body: Record<string, unknown>) => runSettingsAction(async () => {
     if (providerId) await studioApi.updateSettingsProvider(providerId, body);
     else await studioApi.createSettingsProvider(body);
-  }, providerId ? 'Provider 配置已保存' : 'V3 Provider 已创建');
+  }, providerId ? 'Provider 配置已保存' : 'V4 Provider 已创建');
   const addSettingsPreset = (presetId: string) => runSettingsAction(async () => { await studioApi.addSettingsProviderPreset(presetId); }, 'Provider 预设已添加');
   const deleteSettingsProvider = async (providerId: string) => {
     if (!(await requestConfirmation('确认删除 Provider', '这会永久删除该 Provider 的接入配置、系统凭据和能力绑定；项目内容与下方快速接入预设会保留。确认继续？', '删除 Provider', true))) return;
@@ -4193,7 +4193,7 @@ function Studio() {
     if (!agentPlan || !project || !graphEnvelope) return;
     setAgentBusy(true);
     try {
-      const result = await studioApi.applyAgentPlan(agentPlan.id, { expected_project_revision: project.revision, expected_graph_revision: graphEnvelope.revision, detail: { approved_from: 'v3_canvas' } });
+      const result = await studioApi.applyAgentPlan(agentPlan.id, { expected_project_revision: project.revision, expected_graph_revision: graphEnvelope.revision, detail: { approved_from: 'v4_canvas' } });
       const refreshed = await studioApi.graph(project.document.id);
       setGraphEnvelope(refreshed);
       setNodes(toFlowNodes(refreshed.graph));
@@ -5184,7 +5184,7 @@ function Studio() {
   return (
     <div className="studio-shell">
       <aside className="studio-sidebar" aria-label="Primary navigation">
-        <div className="brand"><b>F</b><div><strong>FRAMEFLOW</strong><span>AI VIDEO OS · V3</span></div></div>
+        <div className="brand"><b>F</b><div><strong>FRAMEFLOW</strong><span>AI VIDEO OS · V4</span></div></div>
         <button className="create-button" onClick={() => { if (mode === 'canvas') openAssetCreate(); else void openAssetBoard(); }} disabled={busy || !project}>{mode === 'canvas' ? '＋ 新增资产' : '进入资产生产'}</button>
         <nav aria-label="Primary workspace navigation">
           <p>工作空间</p>
@@ -5196,7 +5196,7 @@ function Studio() {
           <p>系统</p>
           <button className={mode === 'settings' ? 'active' : ''} aria-current={mode === 'settings' ? 'page' : undefined} onClick={() => setMode('settings')}>⚙ 设置与 Provider</button>
         </nav>
-        <div className="sidebar-footer"><span>V3 ONLY · 本地优先运行时</span><span>/api/v2 · revision protected</span></div>
+        <div className="sidebar-footer"><span>V4 ONLY · 本地优先运行时</span><span>/api/v2 · revision protected</span></div>
       </aside>
       <main className="studio-main">
         <h1 className="a11y-page-title">{({ home: '项目总览', story: '故事与分镜', canvas: '资产生产工作区', timeline: '后期时间线', audio: '声音资产工坊', settings: '设置与 Provider' } as Record<StudioMode, string>)[mode]}</h1>
@@ -5291,7 +5291,7 @@ function Studio() {
         {selectedNode && <section className="node-inspector"><h3>{selectedNode.data.kind === 'group' ? '分组 Inspector' : '节点 Inspector'}</h3><label>节点名称<input value={selectedNode.data.label} onChange={(event) => updateSelectedNode({ label: event.target.value })} /></label>{selectedNode.data.kind !== 'group' && <><label className="check-row"><input type="checkbox" checked={Boolean(selectedNode.data.config.paid)} onChange={(event) => updateSelectedNode({}, { paid: event.target.checked })} />付费节点</label><label>预计费用<input type="number" min="0" step="0.01" value={String(selectedNode.data.config.estimated_cost ?? '')} onChange={(event) => updateSelectedNode({}, { estimated_cost: event.target.value === '' ? 0 : Number(event.target.value) })} /></label></>}{selectedNode.data.kind === 'group' && <label className="check-row"><input type="checkbox" checked={Boolean(selectedNode.data.config.collapsed)} onChange={(event) => updateSelectedNode({}, { collapsed: event.target.checked })} />折叠组内容</label>}<label className="check-row"><input type="checkbox" checked={selectedNode.data.locked} onChange={(event) => updateSelectedNode({ locked: event.target.checked })} />锁定节点位置</label><small className="inspector-hint">修改会进入图编辑历史，保存时受 revision 冲突保护。</small></section>}
         <section><h3>制作规格</h3><dl><div><dt>画幅</dt><dd>{project?.document.ratio || '—'}</dd></div><div><dt>时长</dt><dd>{project?.document.duration || 0}s</dd></div><div><dt>图版本</dt><dd>v{graphEnvelope?.revision || 0}</dd></div><div><dt>时间线</dt><dd>v{timelineEnvelope?.revision || 0}{timelineDirty ? ' · 未保存' : ''}</dd></div></dl></section>
         {renderJob && <section><h3>交付作业</h3><div className="run-card"><b>{renderJob.status}</b><code>{renderJob.id}</code>{renderJob.result?.delivery && <small>MP4、字幕、项目 JSON、资产清单和 manifest 已生成</small>}{renderJob.error && <small>{String(renderJob.error.message || '渲染失败')}</small>}</div></section>}
-        <section><h3>监督式运行</h3>{run ? <div className="run-card"><b>{runStatusLabel(run.status)}</b><code>{run.id}</code><span>{run.estimate.node_count} 节点 · {run.estimate.paid_node_count} 付费</span>{'nodes' in run && <small>{(run as WorkflowRunDetail).nodes.filter((node) => ['succeeded', 'cached'].includes(node.status)).length}/{(run as WorkflowRunDetail).nodes.length} 个节点完成</small>}<div className="run-actions">{['queued', 'running'].includes(run.status) && <button onClick={() => controlRun('pause')} disabled={busy}>暂停</button>}{['paused', 'failed'].includes(run.status) && <button onClick={() => controlRun('resume')} disabled={busy}>恢复</button>}{!['succeeded', 'failed', 'canceled'].includes(run.status) && <button onClick={() => controlRun('cancel')} disabled={busy}>取消</button>}</div></div> : <p className="muted">尚未启动 V3 工作流。可选择节点进行局部运行。</p>}</section>
+        <section><h3>监督式运行</h3>{run ? <div className="run-card"><b>{runStatusLabel(run.status)}</b><code>{run.id}</code><span>{run.estimate.node_count} 节点 · {run.estimate.paid_node_count} 付费</span>{'nodes' in run && <small>{(run as WorkflowRunDetail).nodes.filter((node) => ['succeeded', 'cached'].includes(node.status)).length}/{(run as WorkflowRunDetail).nodes.length} 个节点完成</small>}<div className="run-actions">{['queued', 'running'].includes(run.status) && <button onClick={() => controlRun('pause')} disabled={busy}>暂停</button>}{['paused', 'failed'].includes(run.status) && <button onClick={() => controlRun('resume')} disabled={busy}>恢复</button>}{!['succeeded', 'failed', 'canceled'].includes(run.status) && <button onClick={() => controlRun('cancel')} disabled={busy}>取消</button>}</div></div> : <p className="muted">尚未启动 V4 工作流。可选择节点进行局部运行。</p>}</section>
          <section className="assistant-context-launcher"><div className="assistant-context-launcher-head"><div><span>FRAMEFLOW AI</span><h3>创作助手</h3></div><b>{agentPlan?.status === 'awaiting_review' ? '待审阅' : '在线'}</b></div><p>读取全流程、当前项目和 Video Skill，生成可审阅的结构化修改。</p><button onClick={() => setAssistantOpen(true)}>打开 AI 助手 <span>✦</span></button></section>
         <section><h3>安全门</h3><ul><li>付费生成必须确认</li><li>批准资产不可覆盖</li><li>运行保存不可变快照</li><li>失败只重跑受影响节点</li></ul></section>
         </>}

@@ -51,7 +51,7 @@ class ProjectImport(StrictModel):
     expected_revision: int | None = Field(default=None, ge=1)
 
 
-class ProjectCreateV3(StrictModel):
+class ProjectCreateV4(StrictModel):
     name: str = Field(min_length=1, max_length=100)
     ratio: str = "9:16"
     duration: int = Field(default=30, ge=1, le=3600)
@@ -123,7 +123,7 @@ class AssistantRequest(StrictModel):
     assistant_mode: Literal["general", "voice-preparation"] = "general"
 
 
-class AssistantRunCreateV3(StrictModel):
+class AssistantRunCreateV4(StrictModel):
     """Input for the durable, project-scoped Agent workspace run."""
 
     project_id: str = Field(min_length=1, max_length=100)
@@ -140,22 +140,22 @@ class AssistantRunCreateV3(StrictModel):
     client_message_id: str = Field(min_length=1, max_length=160)
 
 
-class AssistantConversationCreateV3(StrictModel):
+class AssistantConversationCreateV4(StrictModel):
     title: str = Field(default="", max_length=200)
     assistant_mode: Literal["general", "voice-preparation"] = "general"
 
 
-class AssistantConversationUpdateV3(StrictModel):
+class AssistantConversationUpdateV4(StrictModel):
     title: str = Field(min_length=1, max_length=200)
 
 
-class AssistantExternalConfirmationV3(StrictModel):
+class AssistantExternalConfirmationV4(StrictModel):
     decision: Literal["approve", "reject"]
     provider_profile_id: str | None = Field(default=None, max_length=120)
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class AssistantApplyV3(StrictModel):
+class AssistantApplyV4(StrictModel):
     plan_id: str | None = Field(default=None, max_length=160)
     selected_operation_ids: list[str] = Field(default_factory=list, max_length=200)
     expected_project_revision: int = Field(ge=1)
@@ -165,11 +165,11 @@ class AssistantApplyV3(StrictModel):
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class AssistantRejectV3(StrictModel):
+class AssistantRejectV4(StrictModel):
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class AudioAssistantDraftApplyV3(StrictModel):
+class AudioAssistantDraftApplyV4(StrictModel):
     """Apply selected audio-assistant operations to a local draft only."""
 
     selected_operation_ids: list[str] = Field(default_factory=list, max_length=100)
@@ -180,7 +180,7 @@ class AudioAssistantDraftApplyV3(StrictModel):
     document: dict[str, Any] = Field(default_factory=dict)
 
 
-class AudioTextConfirmationV3(StrictModel):
+class AudioTextConfirmationV4(StrictModel):
     """Record an explicit user confirmation for one dialogue or audition line."""
 
     target_type: Literal["dialogue", "audition"]
@@ -525,7 +525,7 @@ class AssetBoardPosition(StrictModel):
     y: float = 0
 
 
-class AssetBoardNodeV3(StrictModel):
+class AssetBoardNodeV4(StrictModel):
     id: str = Field(min_length=1, max_length=160)
     node_type: Literal["asset", "shot", "group", "handoff", "artifact"]
     label: str = Field(min_length=1, max_length=500)
@@ -536,32 +536,32 @@ class AssetBoardNodeV3(StrictModel):
     status: str = Field(default="idle", max_length=80)
 
 
-class AssetBoardEdgeV3(StrictModel):
+class AssetBoardEdgeV4(StrictModel):
     id: str = Field(min_length=1, max_length=200)
     source: str = Field(min_length=1, max_length=160)
     target: str = Field(min_length=1, max_length=160)
     relation: Literal["shot_dependency", "reference", "fusion_input", "candidate"]
 
 
-class AssetBoardV3(StrictModel):
+class AssetBoardV4(StrictModel):
     version: int = Field(default=1, ge=1)
     viewport: dict[str, float] = Field(default_factory=lambda: {"x": 0.0, "y": 0.0, "zoom": 0.75})
-    nodes: list[AssetBoardNodeV3] = Field(default_factory=list)
-    edges: list[AssetBoardEdgeV3] = Field(default_factory=list)
+    nodes: list[AssetBoardNodeV4] = Field(default_factory=list)
+    edges: list[AssetBoardEdgeV4] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class AssetBoardUpdateV3(StrictModel):
-    board: AssetBoardV3
+class AssetBoardUpdateV4(StrictModel):
+    board: AssetBoardV4
     expected_revision: int = Field(ge=1)
 
 
-class AssetBoardSyncV3(StrictModel):
+class AssetBoardSyncV4(StrictModel):
     expected_revision: int = Field(ge=1)
     preserve_layout: bool = True
 
 
-class AssetAssignmentV3(StrictModel):
+class AssetAssignmentV4(StrictModel):
     """Atomically update a shot requirement and its asset-board dependency."""
 
     expected_project_revision: int = Field(ge=1)
@@ -574,7 +574,7 @@ class AssetAssignmentV3(StrictModel):
     required_readiness: Literal["registered", "production"] = "production"
 
 
-class AssetCreateV3(StrictModel):
+class AssetCreateV4(StrictModel):
     expected_revision: int = Field(ge=1)
     name: str = Field(min_length=1, max_length=240)
     asset_class: Literal["character", "scene", "prop", "fusion", "product", "style", "video", "audio", "music", "sfx"]
@@ -583,7 +583,7 @@ class AssetCreateV3(StrictModel):
     required: bool = False
 
 
-class AssetDuplicateV3(StrictModel):
+class AssetDuplicateV4(StrictModel):
     expected_revision: int = Field(ge=1)
     name: str | None = Field(default=None, max_length=240)
 
@@ -622,7 +622,7 @@ class StoryboardAcceptRequest(StrictModel):
     shot_ids: list[str] = Field(default_factory=list)
 
 
-class StorySpecV3(StrictModel):
+class StorySpecV4(StrictModel):
     workflow_mode: Literal["optimize_script_and_storyboard", "storyboard_from_source"] = "optimize_script_and_storyboard"
     creative_goal: str = Field(default="", max_length=10000)
     audience: str = Field(default="", max_length=500)
@@ -654,22 +654,22 @@ class StorySpecV3(StrictModel):
     rule_sources: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class StoryDocumentUpdateV3(StrictModel):
+class StoryDocumentUpdateV4(StrictModel):
     expected_revision: int = Field(ge=1)
-    spec: StorySpecV3
+    spec: StorySpecV4
     script: str = Field(default="", max_length=200000)
     scenes: list[dict[str, Any]] = Field(default_factory=list)
     shots: list[dict[str, Any]] = Field(default_factory=list)
 
 
-class StoryRollbackV3(StrictModel):
+class StoryRollbackV4(StrictModel):
     expected_revision: int = Field(ge=1)
     version_id: str = Field(min_length=1, max_length=160)
     scope: Literal["script", "shots", "all"] = "all"
 
 
 # ---------------------------------------------------------------------------
-# V3 graph runtime and delivery timeline.
+# V4 graph runtime and delivery timeline.
 # ---------------------------------------------------------------------------
 
 class GraphPosition(StrictModel):
@@ -677,7 +677,7 @@ class GraphPosition(StrictModel):
     y: float = 0
 
 
-class WorkflowNodeV3(StrictModel):
+class WorkflowNodeV4(StrictModel):
     id: str = Field(min_length=1, max_length=120)
     kind: str = Field(min_length=1, max_length=80)
     label: str = Field(default="", max_length=200)
@@ -690,7 +690,7 @@ class WorkflowNodeV3(StrictModel):
     locked: bool = False
 
 
-class WorkflowEdgeV3(StrictModel):
+class WorkflowEdgeV4(StrictModel):
     id: str = Field(min_length=1, max_length=160)
     source: str = Field(min_length=1, max_length=120)
     target: str = Field(min_length=1, max_length=120)
@@ -699,34 +699,34 @@ class WorkflowEdgeV3(StrictModel):
     relation: Literal["execution", "reference", "lineage", "annotation"] = "execution"
 
 
-class WorkflowGraphV3(StrictModel):
+class WorkflowGraphV4(StrictModel):
     version: int = Field(default=1, ge=1)
     template_id: str | None = Field(default=None, max_length=120)
-    nodes: list[WorkflowNodeV3] = Field(default_factory=list)
-    edges: list[WorkflowEdgeV3] = Field(default_factory=list)
+    nodes: list[WorkflowNodeV4] = Field(default_factory=list)
+    edges: list[WorkflowEdgeV4] = Field(default_factory=list)
     viewport: dict[str, float] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class WorkflowGraphUpdateV3(StrictModel):
-    graph: WorkflowGraphV3
+class WorkflowGraphUpdateV4(StrictModel):
+    graph: WorkflowGraphV4
     expected_revision: int = Field(ge=1)
 
 
-class WorkflowTemplateCreateV3(StrictModel):
+class WorkflowTemplateCreateV4(StrictModel):
     id: str | None = Field(default=None, min_length=1, max_length=120)
     name: str = Field(min_length=1, max_length=120)
     description: str = Field(default="", max_length=1000)
     category: str = Field(default="custom", min_length=1, max_length=40)
-    graph: WorkflowGraphV3
+    graph: WorkflowGraphV4
 
 
-class WorkflowTemplateApplyV3(StrictModel):
+class WorkflowTemplateApplyV4(StrictModel):
     template_id: str = Field(min_length=1, max_length=120)
     expected_revision: int = Field(ge=1)
 
 
-class ProviderRoutePreviewV3(StrictModel):
+class ProviderRoutePreviewV4(StrictModel):
     capability: str = Field(min_length=1, max_length=80)
     provider_profile_id: str | None = None
     model: str | None = None
@@ -737,13 +737,13 @@ class ProviderRoutePreviewV3(StrictModel):
     duration: float | None = Field(default=None, gt=0, le=36000)
 
 
-class ArtifactLineageCreateV3(StrictModel):
+class ArtifactLineageCreateV4(StrictModel):
     parent_artifact_id: str = Field(min_length=1, max_length=120)
     relation: str = Field(default="derived_from", min_length=1, max_length=80)
     node_id: str | None = Field(default=None, max_length=120)
 
 
-class WorkflowRunCreateV3(StrictModel):
+class WorkflowRunCreateV4(StrictModel):
     project_id: str = Field(min_length=1, max_length=100)
     graph_revision: int | None = Field(default=None, ge=1)
     node_ids: list[str] = Field(default_factory=list)
@@ -751,16 +751,16 @@ class WorkflowRunCreateV3(StrictModel):
     confirmed: bool = False
 
 
-class WorkflowRunEstimateV3(StrictModel):
+class WorkflowRunEstimateV4(StrictModel):
     project_id: str = Field(min_length=1, max_length=100)
     node_ids: list[str] = Field(default_factory=list)
 
 
-class RunDecisionV3(StrictModel):
+class RunDecisionV4(StrictModel):
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentNodeChangeV3(StrictModel):
+class AgentNodeChangeV4(StrictModel):
     node_id: str = Field(min_length=1, max_length=120)
     label: str | None = Field(default=None, max_length=200)
     position: GraphPosition | None = None
@@ -772,7 +772,7 @@ class AgentNodeChangeV3(StrictModel):
     locked: bool | None = None
 
 
-class AgentEdgeChangeV3(StrictModel):
+class AgentEdgeChangeV4(StrictModel):
     edge_id: str = Field(min_length=1, max_length=160)
     source: str | None = Field(default=None, min_length=1, max_length=120)
     target: str | None = Field(default=None, min_length=1, max_length=120)
@@ -781,7 +781,7 @@ class AgentEdgeChangeV3(StrictModel):
     relation: Literal["execution", "reference", "lineage", "annotation"] | None = None
 
 
-class AgentCandidateV3(StrictModel):
+class AgentCandidateV4(StrictModel):
     kind: Literal["script", "prompt", "storyboard", "brief", "audio", "timeline", "asset_metadata"]
     title: str = Field(default="Agent 候选", max_length=200)
     target_id: str | None = Field(default=None, max_length=160)
@@ -790,13 +790,13 @@ class AgentCandidateV3(StrictModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentApprovalGateV3(StrictModel):
+class AgentApprovalGateV4(StrictModel):
     reason: str = Field(min_length=1, max_length=120)
     node_ids: list[str] = Field(default_factory=list)
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentWorkspaceOperationV3(StrictModel):
+class AgentWorkspaceOperationV4(StrictModel):
     """One reviewable cross-workspace change produced by the Agent."""
 
     id: str = Field(min_length=1, max_length=160)
@@ -815,27 +815,27 @@ class AgentWorkspaceOperationV3(StrictModel):
     requires_confirmation: bool = False
 
 
-class AgentPatchV3(StrictModel):
+class AgentPatchV4(StrictModel):
     version: int = Field(default=1, ge=1)
     base_project_revision: int = Field(default=1, ge=1)
     base_graph_revision: int = Field(default=1, ge=1)
-    add_nodes: list[WorkflowNodeV3] = Field(default_factory=list)
-    modify_nodes: list[AgentNodeChangeV3] = Field(default_factory=list)
+    add_nodes: list[WorkflowNodeV4] = Field(default_factory=list)
+    modify_nodes: list[AgentNodeChangeV4] = Field(default_factory=list)
     remove_node_ids: list[str] = Field(default_factory=list)
-    add_edges: list[WorkflowEdgeV3] = Field(default_factory=list)
-    modify_edges: list[AgentEdgeChangeV3] = Field(default_factory=list)
+    add_edges: list[WorkflowEdgeV4] = Field(default_factory=list)
+    modify_edges: list[AgentEdgeChangeV4] = Field(default_factory=list)
     remove_edge_ids: list[str] = Field(default_factory=list)
-    candidates: list[AgentCandidateV3] = Field(default_factory=list)
+    candidates: list[AgentCandidateV4] = Field(default_factory=list)
     suggested_run_node_ids: list[str] = Field(default_factory=list)
-    suggested_approval_gates: list[AgentApprovalGateV3] = Field(default_factory=list)
+    suggested_approval_gates: list[AgentApprovalGateV4] = Field(default_factory=list)
     actions: list[str] = Field(default_factory=list)
     requires_confirmation: bool = False
     unsupported_operations: list[str] = Field(default_factory=list)
     notes: str = Field(default="", max_length=4000)
-    workspace_operations: list[AgentWorkspaceOperationV3] = Field(default_factory=list, max_length=200)
+    workspace_operations: list[AgentWorkspaceOperationV4] = Field(default_factory=list, max_length=200)
 
 
-class AgentPlanCreateV3(StrictModel):
+class AgentPlanCreateV4(StrictModel):
     project_id: str = Field(min_length=1, max_length=100)
     message: str = Field(min_length=1, max_length=30000)
     selected_node_ids: list[str] = Field(default_factory=list)
@@ -848,20 +848,20 @@ class AgentPlanCreateV3(StrictModel):
     cost_boundary: dict[str, Any] = Field(default_factory=dict)
 
 
-class AgentPatchPreviewV3(StrictModel):
+class AgentPatchPreviewV4(StrictModel):
     project_id: str = Field(min_length=1, max_length=100)
     patch: dict[str, Any] = Field(default_factory=dict)
     graph_revision: int | None = Field(default=None, ge=1)
     project_revision: int | None = Field(default=None, ge=1)
 
 
-class AgentPlanDecisionV3(StrictModel):
+class AgentPlanDecisionV4(StrictModel):
     expected_project_revision: int | None = Field(default=None, ge=1)
     expected_graph_revision: int | None = Field(default=None, ge=1)
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class TimelineClipV3(StrictModel):
+class TimelineClipV4(StrictModel):
     id: str = Field(min_length=1, max_length=120)
     artifact_id: str | None = Field(default=None, max_length=120)
     source: str | None = Field(default=None, max_length=1000)
@@ -876,22 +876,22 @@ class TimelineClipV3(StrictModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class TimelineTrackV3(StrictModel):
+class TimelineTrackV4(StrictModel):
     id: str = Field(min_length=1, max_length=120)
     kind: Literal["video", "overlay", "dialogue", "music", "ambience", "sfx", "captions"]
     name: str = Field(default="", max_length=120)
     muted: bool = False
     locked: bool = False
-    clips: list[TimelineClipV3] = Field(default_factory=list)
+    clips: list[TimelineClipV4] = Field(default_factory=list)
 
 
-class TimelineDocumentV3(StrictModel):
+class TimelineDocumentV4(StrictModel):
     version: int = Field(default=1, ge=1)
     fps: int = Field(default=30, ge=1, le=120)
     width: int = Field(default=1080, ge=64, le=8192)
     height: int = Field(default=1920, ge=64, le=8192)
     duration: float = Field(default=30, gt=0, le=36000)
-    tracks: list[TimelineTrackV3] = Field(default_factory=list)
+    tracks: list[TimelineTrackV4] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -912,18 +912,18 @@ class TimelineDocumentV3(StrictModel):
         return self
 
 
-class TimelineUpdateV3(StrictModel):
-    document: TimelineDocumentV3
+class TimelineUpdateV4(StrictModel):
+    document: TimelineDocumentV4
     expected_revision: int = Field(ge=1)
 
 
-class TimelineAssemblyRequestV3(StrictModel):
+class TimelineAssemblyRequestV4(StrictModel):
     expected_revision: int = Field(ge=1)
     include_audio: bool = True
     replace_existing: bool = False
 
 
-class RenderEstimateV3(StrictModel):
+class RenderEstimateV4(StrictModel):
     project_id: str = Field(min_length=1, max_length=100)
     timeline_revision: int | None = Field(default=None, ge=1)
     output_name: str = Field(default="final.mp4", min_length=1, max_length=120)
@@ -933,36 +933,36 @@ class RenderEstimateV3(StrictModel):
     subtitle_mode: Literal["burn_in", "external"] = "burn_in"
 
 
-class RenderCreateV3(RenderEstimateV3):
+class RenderCreateV4(RenderEstimateV4):
     confirmed: bool = False
     use_proxies: bool = False
 
 
-class TimelinePreviewRequestV3(StrictModel):
+class TimelinePreviewRequestV4(StrictModel):
     expected_revision: int = Field(ge=1)
     resolution: str = Field(default="960x540", min_length=7, max_length=20)
     use_proxies: bool = True
 
 
-class RenderDecisionV3(StrictModel):
+class RenderDecisionV4(StrictModel):
     detail: dict[str, Any] = Field(default_factory=dict)
 
 
-class BackupCreateV3(StrictModel):
+class BackupCreateV4(StrictModel):
     project_id: str | None = Field(default=None,max_length=100)
 
 
-class RecoveryPreviewV3(StrictModel):
+class RecoveryPreviewV4(StrictModel):
     source_project_id: str = Field(min_length=1,max_length=100)
     proposed_name: str | None = Field(default=None,max_length=240)
 
 
-class RecoveryApplyV3(StrictModel):
+class RecoveryApplyV4(StrictModel):
     preview_id: str = Field(min_length=1,max_length=120)
     manifest_sha256: str = Field(min_length=64,max_length=64)
     confirmed: bool = False
 
 
-class ProxyCreateV3(StrictModel):
+class ProxyCreateV4(StrictModel):
     artifact_id: str = Field(min_length=1, max_length=120)
     preset: Literal["preview_360p", "preview_540p", "preview_720p"] = "preview_540p"

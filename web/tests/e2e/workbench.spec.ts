@@ -67,7 +67,7 @@ async function seedAssetBoardProject(page: Page, name = '资产选中验收项�
   return { id: project.document.id, name, assetId: assetResult.asset.id };
 }
 
-test.describe('FrameFlow V3 workbench', () => {
+test.describe('FrameFlow V4 workbench', () => {
   test('API readiness and legacy boundary are explicit', async ({ request }) => {
     const health = await request.get('/api/health');
     expect(health.ok()).toBeTruthy();
@@ -225,7 +225,7 @@ test.describe('FrameFlow V3 workbench', () => {
 
     await navigation.getByRole('button', { name: /资产生产工作区/ }).click();
     await expect(page.locator('.asset-board-toolbar')).toBeVisible();
-    await expect(page.locator('.asset-library-v3')).toHaveCount(0);
+    await expect(page.locator('.asset-library-v4')).toHaveCount(0);
     await expect(page.locator('.asset-board-card.asset-board-asset').filter({ hasText: '于村祠堂雨夜' }).first()).toBeVisible();
   });
 

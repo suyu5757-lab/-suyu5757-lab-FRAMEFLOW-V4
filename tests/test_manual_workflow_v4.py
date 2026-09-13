@@ -13,7 +13,7 @@ import server
 VIDEO_STUB = b"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2"
 
 
-class ManualWorkflowV3Tests(unittest.TestCase):
+class ManualWorkflowV4Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-manual-workflow-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)

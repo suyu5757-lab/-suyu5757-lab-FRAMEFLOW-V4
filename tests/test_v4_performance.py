@@ -29,7 +29,7 @@ def performance_document() -> dict:
     return {"id": "PRJ_PERF", "name": "Performance", "ratio": "16:9", "duration": 600, "generator": "manual", "brief": "performance", "stage": 0, "sortOrder": 0, "script": "benchmark", "assets": assets, "shots": shots, "audio": {}, "assetRegulator": {}, "generations": [], "seedancePackages": [], "providerOverrides": {}, "undoStack": [], "scriptVersions": [], "storyboardVersions": [], "storyWorkflowRuns": []}
 
 
-class PerformanceV3Tests(unittest.TestCase):
+class PerformanceV4Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-performance-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)

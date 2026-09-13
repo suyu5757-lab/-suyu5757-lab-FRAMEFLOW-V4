@@ -1,6 +1,6 @@
-# Contributing to FRAMEFLOW V3
+# Contributing to FRAMEFLOW V4
 
-感谢参与 FRAMEFLOW V3。请保持提交可复现、可审查，并避免把本机数据带入仓库。
+感谢参与 FRAMEFLOW V4。请保持提交可复现、可审查，并避免把本机数据带入仓库。
 
 ## 开发流程
 

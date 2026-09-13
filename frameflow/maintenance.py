@@ -1,4 +1,4 @@
-"""Safe, repeatable maintenance helpers for the FrameFlow V3 workspace.
+"""Safe, repeatable maintenance helpers for the FrameFlow V4 workspace.
 
 This module deliberately does not remove project media. Database cleanup is
 explicitly scoped to one project id and returns counts so callers can audit the

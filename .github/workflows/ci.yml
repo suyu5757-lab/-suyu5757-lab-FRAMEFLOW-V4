@@ -26,14 +26,14 @@ jobs:
       - name: Run backend tests
         run: >-
           python -m unittest
-          tests.test_maintenance_v3
-          tests.test_v3
-          tests.test_v3_dashboard
-          tests.test_v3_delivery
-          tests.test_v3_function_matrix
-          tests.test_v3_settings
+          tests.test_maintenance_v4
+          tests.test_v4
+          tests.test_v4_dashboard
+          tests.test_v4_delivery
+          tests.test_v4_function_matrix
+          tests.test_v4_settings
           tests.test_asset_board
-          tests.test_asset_v3_improvements
+          tests.test_asset_v4_improvements
           tests.test_fusion_prompt_flow
           tests.test_opencode_client
           tests.test_jimeng_cli

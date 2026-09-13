@@ -1,4 +1,4 @@
-"""FRAMEFLOW V3 local-first FastAPI server."""
+"""FRAMEFLOW V4 local-first FastAPI server."""
 from __future__ import annotations
 
 import asyncio, base64, difflib, hashlib, ipaddress, json, math, mimetypes, os, re, secrets, shutil, sqlite3, sys, tempfile, threading, time, urllib.request, wave, webbrowser
@@ -42,12 +42,12 @@ from frameflow.project_storage import describe_project_storage, sync_all_project
 from frameflow.reference_authority import normalize_reference_authority, ordered_reference_snapshot
 from frameflow.recovery import RecoveryError, apply_recovery_plan, create_recovery_preview, create_verified_backup, export_project, recovery_scan
 from frameflow.providers import ASSET_INTENT_OUTPUT_SCHEMA, ASSET_PROMPT_CONSISTENCY_OUTPUT_SCHEMA, ASSET_PROMPT_OUTPUT_SCHEMA, FUSION_PROMPT_OUTPUT_SCHEMA, MINIMAX_DEFAULT_REGION, MINIMAX_DEFAULT_TTS_MODEL, MINIMAX_DEFAULT_VOICE_ID, MINIMAX_REGION_BASE_URLS, MINIMAX_REGIONS, MINIMAX_TTS_FORMATS, MINIMAX_TTS_MODELS, MINIMAX_TTS_SPEED_MAX, MINIMAX_TTS_SPEED_MIN, PROJECT_PATCH_SCHEMA, REGULATOR_OUTPUT_SCHEMA, STORYBOARD_OUTPUT_SCHEMA, ProviderError, language_boost_for_locale, minimax_documented_voice_catalog, minimax_region, minimax_speech, minimax_tts_payload, minimax_voice_design, probe_profile, validate_minimax_tts_text
-from frameflow.runtime import execute_v3_run
-from frameflow.schemas import AgentPatchPreviewV3, AgentPlanCreateV3, AgentPlanDecisionV3, AgentPatchV3, AgentWorkspaceOperationV3, ArtifactLineageCreateV3, ArtifactMapRequest, ArtifactRegisterRequest, AssetAssignmentV3, AssetBoardSyncV3, AssetBoardUpdateV3, AssetComparisonCreate, AssetComparisonReview, AssetCreateV3, AssetDuplicateV3, AssetImageGenerate, AssetIntentInterpretCreate, AssetIntentPrepareCreate, AssetManualProductionApproval, AssetMetadataUpdate, AssetPromptRunCreate, AssetReferenceRole, AssistantApplyV3, AssistantConversationCreateV3, AssistantConversationUpdateV3, AssistantExternalConfirmationV3, AssistantRejectV3, AssistantRunCreateV3, AssistantRequest, AudioAssistantDraftApplyV3, AudioTextConfirmationV3, BackupCreateV3, CapabilityBinding, CredentialImport, CredentialWrite, FusionPromptRunCreate, ImageEdit, ImageGenerate, ProjectCreateV3, ProjectImport, ProjectMetadataUpdate, PromptCreateRequest, PromptQADecision, PromptRebuildRequest, PromptReviseRequest, ProviderProfileCreate, ProviderProfileUpdate, ProviderRoutePreviewV3, ProxyCreateV3, QADecisionSubmit, QARunCreate, RecoveryApplyV3, RecoveryPreviewV3, RenderCreateV3, RenderDecisionV3, RenderEstimateV3, RenderRequest, ResolutionRequest, RunDecisionV3, SeedancePackageCreate, SpeechGenerate, StoryDocumentUpdateV3, StoryOptimizationCreate, StoryRollbackV3, StoryboardAcceptRequest, TaskCreate, TimelineAssemblyRequestV3, VoiceDesignGenerate, WorkflowGraphUpdateV3, WorkflowRunCreate, WorkflowRunCreateV3, WorkflowRunEstimateV3, WorkflowTemplateApplyV3, WorkflowTemplateCreateV3
-from frameflow.schemas import TimelineUpdateV3
-from frameflow.schemas import TimelinePreviewRequestV3
+from frameflow.runtime import execute_v4_run
+from frameflow.schemas import AgentPatchPreviewV4, AgentPlanCreateV4, AgentPlanDecisionV4, AgentPatchV4, AgentWorkspaceOperationV4, ArtifactLineageCreateV4, ArtifactMapRequest, ArtifactRegisterRequest, AssetAssignmentV4, AssetBoardSyncV4, AssetBoardUpdateV4, AssetComparisonCreate, AssetComparisonReview, AssetCreateV4, AssetDuplicateV4, AssetImageGenerate, AssetIntentInterpretCreate, AssetIntentPrepareCreate, AssetManualProductionApproval, AssetMetadataUpdate, AssetPromptRunCreate, AssetReferenceRole, AssistantApplyV4, AssistantConversationCreateV4, AssistantConversationUpdateV4, AssistantExternalConfirmationV4, AssistantRejectV4, AssistantRunCreateV4, AssistantRequest, AudioAssistantDraftApplyV4, AudioTextConfirmationV4, BackupCreateV4, CapabilityBinding, CredentialImport, CredentialWrite, FusionPromptRunCreate, ImageEdit, ImageGenerate, ProjectCreateV4, ProjectImport, ProjectMetadataUpdate, PromptCreateRequest, PromptQADecision, PromptRebuildRequest, PromptReviseRequest, ProviderProfileCreate, ProviderProfileUpdate, ProviderRoutePreviewV4, ProxyCreateV4, QADecisionSubmit, QARunCreate, RecoveryApplyV4, RecoveryPreviewV4, RenderCreateV4, RenderDecisionV4, RenderEstimateV4, RenderRequest, ResolutionRequest, RunDecisionV4, SeedancePackageCreate, SpeechGenerate, StoryDocumentUpdateV4, StoryOptimizationCreate, StoryRollbackV4, StoryboardAcceptRequest, TaskCreate, TimelineAssemblyRequestV4, VoiceDesignGenerate, WorkflowGraphUpdateV4, WorkflowRunCreate, WorkflowRunCreateV4, WorkflowRunEstimateV4, WorkflowTemplateApplyV4, WorkflowTemplateCreateV4
+from frameflow.schemas import TimelineUpdateV4
+from frameflow.schemas import TimelinePreviewRequestV4
 from frameflow.secrets_store import SecretStoreError, delete_secret, get_secret, mask_secret, set_secret
-from frameflow.v3 import assemble_approved_timeline, default_graph, ensure_graph, ensure_timeline, estimate_graph, save_graph, save_timeline, select_graph_node_ids, validate_graph, validate_timeline
+from frameflow.v4 import assemble_approved_timeline, default_graph, ensure_graph, ensure_timeline, estimate_graph, save_graph, save_timeline, select_graph_node_ids, validate_graph, validate_timeline
 from frameflow.workflows import WORKFLOWS, evaluate_project_gates, workflow_manifest
 from frameflow.story import build_source_beat_ledger, extract_script_duration, shot_budget, storyboard_source_coverage, story_checks, story_document
 from frameflow.story_rules import DIRECTOR_RULE_PROFILE, director_auto_review, director_rule_profile, is_director_rule_profile
@@ -117,8 +117,8 @@ OPENCODE_GO_MODEL_IDS={
     "deepseek-v4-flash", "hy3",
 }
 TRANSITIONS={"draft":{"validated","canceled"},"validated":{"awaiting_confirmation","queued","canceled"},"awaiting_confirmation":{"queued","canceled"},"queued":{"running","canceled","failed","blocked"},"running":{"succeeded","generated_pending_qa","failed","blocked","canceled"},"succeeded":{"generated_pending_qa","approved"},"generated_pending_qa":{"approved","revision_required"},"revision_required":{"queued","blocked","canceled"},"blocked":{"queued","canceled"},"failed":{"queued","canceled"},"approved":set(),"canceled":set()}
-V3_RUNTIME_TASKS:dict[str,asyncio.Task[Any]]={}
-V3_RENDER_TASKS:dict[str,asyncio.Task[Any]]={}
+V4_RUNTIME_TASKS:dict[str,asyncio.Task[Any]]={}
+V4_RENDER_TASKS:dict[str,asyncio.Task[Any]]={}
 ASSISTANT_RUNTIME_TASKS:dict[str,asyncio.Task[Any]]={}
 
 def classify_bind_host(host:str)->str:
@@ -288,9 +288,9 @@ async def lifespan(application:FastAPI):
         application.state.prompt_registration_reconciliation = None
         application.state.project_storage = None
         application.state.project_storage_error = {"message": str(exc)[:2000]}
-    ensure_daily_startup_backup(application.state.db); await resume_tasks(application); await resume_v3_runs(application); await resume_v3_renders(application); await resume_assistant_runs(application); yield
+    ensure_daily_startup_backup(application.state.db); await resume_tasks(application); await resume_v4_runs(application); await resume_v4_renders(application); await resume_assistant_runs(application); yield
 
-app=FastAPI(title="FRAMEFLOW V3",version="3.0.0",lifespan=lifespan)
+app=FastAPI(title="FRAMEFLOW V4",version="4.0.0",lifespan=lifespan)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
 
 
@@ -318,10 +318,10 @@ async def local_security_boundary(request: Request, call_next):
     return response
 
 
-def _v3_openapi() -> dict[str, Any]:
+def _v4_openapi() -> dict[str, Any]:
     if app.openapi_schema:
         return app.openapi_schema
-    schema = get_openapi(title=app.title, version=app.version, description="FrameFlow V3 API", routes=app.routes)
+    schema = get_openapi(title=app.title, version=app.version, description="FrameFlow V4 API", routes=app.routes)
     schema["paths"] = {
         path: value for path, value in schema.get("paths", {}).items()
         if path.startswith("/api/v2/") or path in {"/api/health", "/api/system/doctor"}
@@ -330,7 +330,7 @@ def _v3_openapi() -> dict[str, Any]:
     return schema
 
 
-app.openapi = _v3_openapi
+app.openapi = _v4_openapi
 
 def error_category(status:int)->str:
     if status==409:return "conflict"
@@ -379,62 +379,62 @@ async def unhandled_error(_:Request,exc:Exception):
 
 
 @app.middleware("http")
-async def v3_only_gateway(request: Request, call_next):
-    """Retire the pre-V3 public surface while keeping internal helpers callable."""
+async def v4_only_gateway(request: Request, call_next):
+    """Retire the pre-V4 public surface while keeping internal helpers callable."""
     path = request.url.path
     allowed = path.startswith("/api/v2/") or path in {"/api/health", "/api/system/doctor"} or path.startswith("/api/project-files/") or path.startswith("/generated/")
     if path.startswith("/api/") and not allowed:
-        return JSONResponse(status_code=410, content={"code": "legacy_api_retired", "message": "旧版接口已在 FrameFlow V3 中退役，请使用 /api/v2。", "retryable": False})
+        return JSONResponse(status_code=410, content={"code": "legacy_api_retired", "message": "旧版接口已在 FrameFlow V4 中退役，请使用 /api/v2。", "retryable": False})
     return await call_next(request)
 
 def db(request:Request)->Database:return request.app.state.db
 
 
-def schedule_v3_run(application:FastAPI,run_id:str)->None:
-    existing=V3_RUNTIME_TASKS.get(run_id)
+def schedule_v4_run(application:FastAPI,run_id:str)->None:
+    existing=V4_RUNTIME_TASKS.get(run_id)
     if existing and not existing.done():
         return
-    task=asyncio.create_task(execute_v3_run(application.state.db,run_id))
-    V3_RUNTIME_TASKS[run_id]=task
+    task=asyncio.create_task(execute_v4_run(application.state.db,run_id))
+    V4_RUNTIME_TASKS[run_id]=task
 
     def cleanup(completed:asyncio.Task[Any])->None:
-        if V3_RUNTIME_TASKS.get(run_id) is completed:
-            V3_RUNTIME_TASKS.pop(run_id,None)
+        if V4_RUNTIME_TASKS.get(run_id) is completed:
+            V4_RUNTIME_TASKS.pop(run_id,None)
         if not completed.cancelled():
             completed.exception()
 
     task.add_done_callback(cleanup)
 
 
-async def resume_v3_runs(application:FastAPI)->None:
+async def resume_v4_runs(application:FastAPI)->None:
     database:Database=application.state.db
     with database.connect() as connection:
         rows=connection.execute("SELECT id FROM workflow_runs_v3 WHERE status IN ('queued','running') ORDER BY created_at").fetchall()
-    for row in rows:schedule_v3_run(application,row["id"])
+    for row in rows:schedule_v4_run(application,row["id"])
 
 
-def schedule_v3_render(application:FastAPI, render_id: str) -> None:
-    existing = V3_RENDER_TASKS.get(render_id)
+def schedule_v4_render(application:FastAPI, render_id: str) -> None:
+    existing = V4_RENDER_TASKS.get(render_id)
     if existing and not existing.done():
         return
-    task = asyncio.create_task(run_v3_render_task(application, render_id))
-    V3_RENDER_TASKS[render_id] = task
+    task = asyncio.create_task(run_v4_render_task(application, render_id))
+    V4_RENDER_TASKS[render_id] = task
 
     def cleanup(completed: asyncio.Task[Any]) -> None:
-        if V3_RENDER_TASKS.get(render_id) is completed:
-            V3_RENDER_TASKS.pop(render_id, None)
+        if V4_RENDER_TASKS.get(render_id) is completed:
+            V4_RENDER_TASKS.pop(render_id, None)
         if not completed.cancelled():
             completed.exception()
 
     task.add_done_callback(cleanup)
 
 
-async def resume_v3_renders(application: FastAPI) -> None:
+async def resume_v4_renders(application: FastAPI) -> None:
     database: Database = application.state.db
     with database.connect() as connection:
         rows = connection.execute("SELECT id FROM render_jobs_v6 WHERE status IN ('queued','running') ORDER BY created_at").fetchall()
     for row in rows:
-        schedule_v3_render(application, row["id"])
+        schedule_v4_render(application, row["id"])
 
 
 async def resume_assistant_runs(application: FastAPI) -> None:
@@ -738,7 +738,7 @@ async def doctor(request:Request):
 
 
 @app.get("/api/v2/system/data-audit")
-async def data_audit_v3(request:Request):
+async def data_audit_v4(request:Request):
     return scan_data_integrity(db(request),DATA_DIR)
 
 
@@ -748,7 +748,7 @@ def _recovery_http_error(exc:RecoveryError)->HTTPException:
 
 
 @app.post("/api/v2/system/backups")
-async def create_backup_v3(body:BackupCreateV3,request:Request):
+async def create_backup_v4(body:BackupCreateV4,request:Request):
     database=db(request)
     if body.project_id:
         with database.connect() as connection:
@@ -758,30 +758,30 @@ async def create_backup_v3(body:BackupCreateV3,request:Request):
 
 
 @app.post("/api/v2/projects/{project_id}/export")
-async def export_project_v3(project_id:str,request:Request):
+async def export_project_v4(project_id:str,request:Request):
     try:return export_project(db(request),DATA_DIR,DATA_DIR/"exports",project_id)
     except RecoveryError as exc:raise _recovery_http_error(exc) from exc
 
 
 @app.get("/api/v2/recovery/scan")
-async def recovery_scan_v3(request:Request):
+async def recovery_scan_v4(request:Request):
     return recovery_scan(db(request),DATA_DIR)
 
 
 @app.post("/api/v2/recovery/preview")
-async def recovery_preview_v3(body:RecoveryPreviewV3,request:Request):
+async def recovery_preview_v4(body:RecoveryPreviewV4,request:Request):
     try:return create_recovery_preview(db(request),DATA_DIR,body.source_project_id,body.proposed_name)
     except RecoveryError as exc:raise _recovery_http_error(exc) from exc
 
 
 @app.post("/api/v2/recovery/apply")
-async def recovery_apply_v3(body:RecoveryApplyV3,request:Request):
+async def recovery_apply_v4(body:RecoveryApplyV4,request:Request):
     try:return apply_recovery_plan(db(request),DATA_DIR,body.preview_id,body.manifest_sha256,body.confirmed)
     except RecoveryError as exc:raise _recovery_http_error(exc) from exc
 
 
 @app.post("/api/v2/projects/{project_id}/maintenance/repair-asset-links")
-async def repair_asset_links_v3(project_id: str, request: Request):
+async def repair_asset_links_v4(project_id: str, request: Request):
     """Repair explicit story/asset relationships without changing readiness."""
     database = db(request)
     now = utcnow()
@@ -1007,12 +1007,12 @@ async def workflows():
 
 
 @app.get("/api/v2/contracts")
-async def contracts_v3():
+async def contracts_v4():
     return contract_for("all")
 
 
 @app.get("/api/v2/contracts/{scope}")
-async def contract_scope_v3(scope: str):
+async def contract_scope_v4(scope: str):
     try:
         return contract_for(scope)
     except KeyError as exc:
@@ -1028,11 +1028,11 @@ async def workflow_run(body:WorkflowRunCreate,request:Request):
 
 
 # ---------------------------------------------------------------------------
-# V3 graph, supervised runtime, provider catalog, lineage and timeline APIs.
+# V4 graph, supervised runtime, provider catalog, lineage and timeline APIs.
 # ---------------------------------------------------------------------------
 
 @app.get("/api/v2/projects")
-async def list_projects_v3(request:Request, include_archived: bool = False):
+async def list_projects_v4(request:Request, include_archived: bool = False):
     database = db(request)
     with database.connect() as connection:
         query = "SELECT * FROM projects"
@@ -1098,7 +1098,7 @@ def _insert_project_with_directory(database:Database,project_id:str,name:str,doc
 
 
 @app.post("/api/v2/projects", status_code=201)
-async def create_project_v3(body:ProjectCreateV3,request:Request):
+async def create_project_v4(body:ProjectCreateV4,request:Request):
     database = db(request)
     name = body.name.strip()
     if not name:
@@ -1174,7 +1174,7 @@ async def create_project_v3(body:ProjectCreateV3,request:Request):
 def _dashboard_latest_run(database:Database, project_id:str)->dict[str,Any]|None:
     with database.connect() as c:
         row=c.execute("SELECT * FROM workflow_runs_v3 WHERE project_id=? ORDER BY created_at DESC LIMIT 1",(project_id,)).fetchone()
-    return _run_v3_payload(database,row) if row else None
+    return _run_v4_payload(database,row) if row else None
 
 
 def _dashboard_latest_story_run(database:Database, project_id:str)->dict[str,Any]|None:
@@ -1240,7 +1240,7 @@ def _dashboard_snapshot(database:Database, row:Any, detail:bool=False)->dict[str
 
 
 @app.get("/api/v2/dashboard")
-async def dashboard_v3(request:Request,project_id:str|None=None,include_archived: bool = False):
+async def dashboard_v4(request:Request,project_id:str|None=None,include_archived: bool = False):
     database=db(request)
     with database.connect() as c:
         query = "SELECT * FROM projects"
@@ -1259,7 +1259,7 @@ async def dashboard_v3(request:Request,project_id:str|None=None,include_archived
 
 
 @app.get("/api/v2/projects/{project_id}")
-async def read_project_v3(project_id:str,request:Request):
+async def read_project_v4(project_id:str,request:Request):
     database = db(request)
     with database.connect() as connection:
         row = connection.execute("SELECT * FROM projects WHERE id=?", (project_id,)).fetchone()
@@ -1271,7 +1271,7 @@ async def read_project_v3(project_id:str,request:Request):
 
 
 @app.get("/api/v2/projects/{project_id}/storage")
-async def project_storage_v3(project_id: str, request: Request):
+async def project_storage_v4(project_id: str, request: Request):
     """Describe the external, human-readable project workspace."""
     database = db(request)
     with database.connect() as connection:
@@ -1282,7 +1282,7 @@ async def project_storage_v3(project_id: str, request: Request):
 
 
 @app.post("/api/v2/projects/{project_id}/storage/sync")
-async def sync_project_storage_v3(project_id: str, request: Request):
+async def sync_project_storage_v4(project_id: str, request: Request):
     """Materialize all current project outputs without changing workflow state."""
     database = db(request)
     try:
@@ -1293,7 +1293,7 @@ async def sync_project_storage_v3(project_id: str, request: Request):
 
 
 @app.get("/api/v2/projects/{project_id}/audit-events")
-async def project_audit_events_v3(project_id:str,request:Request,limit:int=100):
+async def project_audit_events_v4(project_id:str,request:Request,limit:int=100):
     if limit < 1 or limit > audit_trail.MAX_QUERY_LIMIT:
         raise HTTPException(422,f"limit 必须在 1 到 {audit_trail.MAX_QUERY_LIMIT} 之间。")
     database=db(request)
@@ -1303,12 +1303,12 @@ async def project_audit_events_v3(project_id:str,request:Request,limit:int=100):
 
 
 @app.put("/api/v2/projects/{project_id}")
-async def save_project_v3(project_id:str,body:ProjectImport,request:Request):
+async def save_project_v4(project_id:str,body:ProjectImport,request:Request):
     return await save_project(project_id, body, request)
 
 
 @app.patch("/api/v2/projects/{project_id}")
-async def update_project_metadata_v3(project_id:str,body:ProjectMetadataUpdate,request:Request):
+async def update_project_metadata_v4(project_id:str,body:ProjectMetadataUpdate,request:Request):
     database = db(request)
     with database.connect() as connection:
         current = connection.execute("SELECT revision, document_json FROM projects WHERE id=?", (project_id,)).fetchone()
@@ -1337,12 +1337,12 @@ async def update_project_metadata_v3(project_id:str,body:ProjectMetadataUpdate,r
     return {"ok": True, "document": document, "revision": revision, "updated_at": now, "lifecycle_status": lifecycle_status}
 
 @app.get("/api/v2/projects/{project_id}/graph")
-async def read_graph_v3(project_id:str,request:Request):
+async def read_graph_v4(project_id:str,request:Request):
     return ensure_graph(db(request),project_id)
 
 
 @app.put("/api/v2/projects/{project_id}/graph")
-async def write_graph_v3(project_id:str,body:WorkflowGraphUpdateV3,request:Request):
+async def write_graph_v4(project_id:str,body:WorkflowGraphUpdateV4,request:Request):
     ensure_graph(db(request),project_id)
     database=db(request)
     envelope=save_graph(database,project_id,body.graph,body.expected_revision)
@@ -1351,7 +1351,7 @@ async def write_graph_v3(project_id:str,body:WorkflowGraphUpdateV3,request:Reque
 
 
 @app.get("/api/v2/workflow-templates")
-async def workflow_templates_v3(request:Request):
+async def workflow_templates_v4(request:Request):
     database=db(request)
     builtin={
         "id":"builtin:professional-video","name":"专业 AI 视频全流程","description":"故事、资产、融合、镜头、声音、生成与交付的监督式工作流。",
@@ -1364,7 +1364,7 @@ async def workflow_templates_v3(request:Request):
 
 
 @app.post("/api/v2/workflow-templates")
-async def create_workflow_template_v3(body:WorkflowTemplateCreateV3,request:Request):
+async def create_workflow_template_v4(body:WorkflowTemplateCreateV4,request:Request):
     validate_graph(body.graph)
     database=db(request); template_id=body.id or f"TPL_{secrets.token_hex(8)}"; now=utcnow()
     graph=body.graph.model_dump(mode="json")
@@ -1378,7 +1378,7 @@ async def create_workflow_template_v3(body:WorkflowTemplateCreateV3,request:Requ
 
 
 @app.post("/api/v2/projects/{project_id}/apply-template")
-async def apply_workflow_template_v3(project_id:str,body:WorkflowTemplateApplyV3,request:Request):
+async def apply_workflow_template_v4(project_id:str,body:WorkflowTemplateApplyV4,request:Request):
     database=db(request); current=ensure_graph(database,project_id)
     if body.expected_revision!=current["revision"]:
         raise HTTPException(409,{"message":"工作流图版本已变化，请刷新后重试。","current_revision":current["revision"]})
@@ -1392,12 +1392,12 @@ async def apply_workflow_template_v3(project_id:str,body:WorkflowTemplateApplyV3
         if not row: raise HTTPException(404,"工作流模板不存在。")
         graph=database.decode(row["graph_json"],{})
         graph["template_id"]=body.template_id
-    validated=WorkflowGraphUpdateV3.model_validate({"graph":graph,"expected_revision":body.expected_revision}).graph
+    validated=WorkflowGraphUpdateV4.model_validate({"graph":graph,"expected_revision":body.expected_revision}).graph
     return save_graph(database,project_id,validated,body.expected_revision)
 
 
 @app.post("/api/v2/runs/estimate")
-async def estimate_run_v3(body:WorkflowRunEstimateV3,request:Request):
+async def estimate_run_v4(body:WorkflowRunEstimateV4,request:Request):
     graph=ensure_graph(db(request),body.project_id)
     known={n.get("id") for n in graph["graph"].get("nodes",[])}; missing=[node_id for node_id in body.node_ids if node_id not in known]
     if missing: raise HTTPException(422,{"message":"估价包含不存在的节点。","missing":missing})
@@ -1405,7 +1405,7 @@ async def estimate_run_v3(body:WorkflowRunEstimateV3,request:Request):
     return {"project_id":body.project_id,"graph_revision":graph["revision"],"selected_node_ids":selected,"estimate":estimate_graph(graph["graph"],selected)}
 
 
-def _run_v3_payload(database:Database,row:sqlite3.Row)->dict[str,Any]:
+def _run_v4_payload(database:Database,row:sqlite3.Row)->dict[str,Any]:
     with database.connect() as connection:
         pending_gate=connection.execute("SELECT id FROM approval_gates_v3 WHERE run_id=? AND status='pending' ORDER BY created_at LIMIT 1",(row["id"],)).fetchone()
     return {
@@ -1417,18 +1417,18 @@ def _run_v3_payload(database:Database,row:sqlite3.Row)->dict[str,Any]:
     }
 
 
-def _get_run_v3(database:Database,run_id:str)->sqlite3.Row:
+def _get_run_v4(database:Database,run_id:str)->sqlite3.Row:
     with database.connect() as c:row=c.execute("SELECT * FROM workflow_runs_v3 WHERE id=?",(run_id,)).fetchone()
-    if not row:raise HTTPException(404,"V3 工作流运行不存在。")
+    if not row:raise HTTPException(404,"V4 工作流运行不存在。")
     return row
 
 
-def _run_event_v3(database:Database,run_id:str,event_type:str,detail:dict[str,Any]|None=None,node_id:str|None=None)->None:
+def _run_event_v4(database:Database,run_id:str,event_type:str,detail:dict[str,Any]|None=None,node_id:str|None=None)->None:
     with database.connect() as c:c.execute("INSERT INTO workflow_run_events_v3(run_id,node_id,event_type,detail_json,created_at) VALUES(?,?,?,?,?)",(run_id,node_id,event_type,database.encode(detail or {}),utcnow()))
 
 
 @app.post("/api/v2/runs")
-async def create_run_v3(body:WorkflowRunCreateV3,request:Request):
+async def create_run_v4(body:WorkflowRunCreateV4,request:Request):
     database=db(request); graph=ensure_graph(database,body.project_id)
     if body.graph_revision is not None and body.graph_revision!=graph["revision"]:
         raise HTTPException(409,{"message":"工作流图版本已变化。","current_revision":graph["revision"]})
@@ -1437,7 +1437,7 @@ async def create_run_v3(body:WorkflowRunCreateV3,request:Request):
     if missing:raise HTTPException(422,{"message":"运行包含不存在的节点。","missing":missing})
     selected_node_ids=select_graph_node_ids(graph["graph"],body.node_ids)
     estimate=estimate_graph(graph["graph"],selected_node_ids); needs_approval=estimate["requires_confirmation"] and not body.confirmed
-    status="awaiting_confirmation" if needs_approval else "queued"; run_id=f"V3RUN_{secrets.token_hex(8)}"; now=utcnow()
+    status="awaiting_confirmation" if needs_approval else "queued"; run_id=f"V4RUN_{secrets.token_hex(8)}"; now=utcnow()
     selected=set(selected_node_ids); nodes=[n for n in graph["graph"].get("nodes",[]) if n.get("id") in selected]
     run_request=body.model_dump(mode="json")
     run_request["selected_node_ids"]=selected_node_ids
@@ -1457,30 +1457,30 @@ async def create_run_v3(body:WorkflowRunCreateV3,request:Request):
             if needs_approval:
                 c.execute("INSERT INTO approval_gates_v3(id,run_id,reason,status,estimate_json,created_at) VALUES(?,?,'paid_generation','pending',?,?)",(f"GATE_{secrets.token_hex(8)}",run_id,database.encode(estimate),now))
             c.execute("INSERT INTO workflow_run_events_v3(run_id,event_type,detail_json,created_at) VALUES(?,?,?,?)",(run_id,"created",database.encode({"status":status,"node_count":len(nodes),"idempotency_fingerprint":fingerprint}),now))
-    if created and status=="queued":schedule_v3_run(request.app,run_id)
-    payload=_run_v3_payload(database,_get_run_v3(database,run_id));payload["idempotent_replay"]=not created
+    if created and status=="queued":schedule_v4_run(request.app,run_id)
+    payload=_run_v4_payload(database,_get_run_v4(database,run_id));payload["idempotent_replay"]=not created
     return payload
 
 
 @app.get("/api/v2/runs/{run_id}")
-async def read_run_v3(run_id:str,request:Request):
-    database=db(request); row=_get_run_v3(database,run_id)
+async def read_run_v4(run_id:str,request:Request):
+    database=db(request); row=_get_run_v4(database,run_id)
     with database.connect() as c:
         nodes=c.execute("SELECT node_id,status,attempt,output_json,error_json,started_at,finished_at FROM node_runs_v3 WHERE run_id=? ORDER BY created_at",(run_id,)).fetchall()
         gates=c.execute("SELECT id,node_id,reason,status,estimate_json,decision_detail_json,decided_at,created_at FROM approval_gates_v3 WHERE run_id=? ORDER BY created_at",(run_id,)).fetchall()
-    payload=_run_v3_payload(database,row)
+    payload=_run_v4_payload(database,row)
     payload["nodes"]=[{"node_id":n["node_id"],"status":n["status"],"attempt":n["attempt"],"output":database.decode(n["output_json"],None),"error":database.decode(n["error_json"],None),"started_at":n["started_at"],"finished_at":n["finished_at"]} for n in nodes]
     payload["approval_gates"]=[{"id":g["id"],"node_id":g["node_id"],"reason":g["reason"],"status":g["status"],"estimate":database.decode(g["estimate_json"],{}),"decision_detail":database.decode(g["decision_detail_json"],{}),"decided_at":g["decided_at"],"created_at":g["created_at"]} for g in gates]
     return payload
 
 
 @app.post("/api/v2/runs/{run_id}/approve")
-async def approve_run_v3(run_id:str,body:RunDecisionV3,request:Request):
+async def approve_run_v4(run_id:str,body:RunDecisionV4,request:Request):
     database=db(request); now=utcnow(); approved=False
     with database.connect() as c:
         c.execute("BEGIN IMMEDIATE")
         row=c.execute("SELECT * FROM workflow_runs_v3 WHERE id=?",(run_id,)).fetchone()
-        if not row:raise HTTPException(404,"V3 工作流运行不存在。")
+        if not row:raise HTTPException(404,"V4 工作流运行不存在。")
         if row["status"]!="awaiting_confirmation":raise HTTPException(409,"当前运行不在等待确认状态。")
         gate=c.execute("SELECT id FROM approval_gates_v3 WHERE run_id=? AND status='pending' ORDER BY created_at LIMIT 1",(run_id,)).fetchone()
         if not gate:raise HTTPException(409,"审批令牌不存在或已被消费。")
@@ -1489,39 +1489,39 @@ async def approve_run_v3(run_id:str,body:RunDecisionV3,request:Request):
         run_update=c.execute("UPDATE workflow_runs_v3 SET status='queued',request_json=?,error_json=NULL,updated_at=? WHERE id=? AND status='awaiting_confirmation'",(database.encode(run_request),now,run_id))
         approved=gate_update.rowcount==1 and run_update.rowcount==1
     if not approved:raise HTTPException(409,"审批令牌不存在或已被消费。")
-    _run_event_v3(database,run_id,"approved",body.detail)
-    schedule_v3_run(request.app,run_id)
-    return _run_v3_payload(database,_get_run_v3(database,run_id))
+    _run_event_v4(database,run_id,"approved",body.detail)
+    schedule_v4_run(request.app,run_id)
+    return _run_v4_payload(database,_get_run_v4(database,run_id))
 
 
-async def _change_run_status_v3(run_id:str,target:str,allowed:set[str],request:Request):
-    database=db(request); row=_get_run_v3(database,run_id)
+async def _change_run_status_v4(run_id:str,target:str,allowed:set[str],request:Request):
+    database=db(request); row=_get_run_v4(database,run_id)
     if row["status"] not in allowed:raise HTTPException(409,f"运行不能从 {row['status']} 转为 {target}。")
     with database.connect() as c:c.execute("UPDATE workflow_runs_v3 SET status=?,updated_at=? WHERE id=?",(target,utcnow(),run_id))
-    _run_event_v3(database,run_id,target,{"from":row["status"]})
-    return _run_v3_payload(database,_get_run_v3(database,run_id))
+    _run_event_v4(database,run_id,target,{"from":row["status"]})
+    return _run_v4_payload(database,_get_run_v4(database,run_id))
 
 
 @app.post("/api/v2/runs/{run_id}/pause")
-async def pause_run_v3(run_id:str,request:Request):return await _change_run_status_v3(run_id,"paused",{"queued","running"},request)
+async def pause_run_v4(run_id:str,request:Request):return await _change_run_status_v4(run_id,"paused",{"queued","running"},request)
 @app.post("/api/v2/runs/{run_id}/resume")
-async def resume_run_v3(run_id:str,request:Request):
-    database=db(request); row=_get_run_v3(database,run_id)
+async def resume_run_v4(run_id:str,request:Request):
+    database=db(request); row=_get_run_v4(database,run_id)
     if row["status"] not in {"paused","failed"}:raise HTTPException(409,f"运行不能从 {row['status']} 转为 queued。")
     now=utcnow()
     with database.connect() as c:
         c.execute("UPDATE node_runs_v3 SET status='pending',error_json=NULL,started_at=NULL,finished_at=NULL,updated_at=? WHERE run_id=? AND status IN ('failed','blocked','canceled','running')",(now,run_id))
         c.execute("UPDATE workflow_runs_v3 SET status='queued',error_json=NULL,updated_at=? WHERE id=?",(now,run_id))
-    _run_event_v3(database,run_id,"resumed",{"from":row["status"]})
-    schedule_v3_run(request.app,run_id)
-    return _run_v3_payload(database,_get_run_v3(database,run_id))
+    _run_event_v4(database,run_id,"resumed",{"from":row["status"]})
+    schedule_v4_run(request.app,run_id)
+    return _run_v4_payload(database,_get_run_v4(database,run_id))
 @app.post("/api/v2/runs/{run_id}/cancel")
-async def cancel_run_v3(run_id:str,request:Request):return await _change_run_status_v3(run_id,"canceled",{"awaiting_confirmation","queued","running","paused","failed"},request)
+async def cancel_run_v4(run_id:str,request:Request):return await _change_run_status_v4(run_id,"canceled",{"awaiting_confirmation","queued","running","paused","failed"},request)
 
 
 @app.get("/api/v2/runs/{run_id}/events")
-async def run_events_v3(run_id:str,request:Request):
-    database=db(request); _get_run_v3(database,run_id)
+async def run_events_v4(run_id:str,request:Request):
+    database=db(request); _get_run_v4(database,run_id)
     async def stream():
         with database.connect() as c:rows=c.execute("SELECT id,node_id,event_type,detail_json,created_at FROM workflow_run_events_v3 WHERE run_id=? ORDER BY id",(run_id,)).fetchall()
         for row in rows:
@@ -1569,7 +1569,7 @@ def _agent_skill(skill_id:str|None)->dict[str,Any]|None:
     except KeyError as exc:raise HTTPException(422,"指定的 Agent Skill 不存在。") from exc
 
 
-async def _submit_agent_provider(database:Database,body:AgentPlanCreateV3,snapshot:dict[str,Any],skill:dict[str,Any]|None,bundle:dict[str,Any]|None=None)->tuple[dict[str,Any],dict[str,Any],str]:
+async def _submit_agent_provider(database:Database,body:AgentPlanCreateV4,snapshot:dict[str,Any],skill:dict[str,Any]|None,bundle:dict[str,Any]|None=None)->tuple[dict[str,Any],dict[str,Any],str]:
     profile,bound_model=resolve_profile(database,"orchestrator",body.provider_profile_id)
     model=body.model or bound_model or profile["model_config"].get("orchestrator_model")
     if not model:raise HTTPException(409,"尚未配置编排模型。")
@@ -1596,7 +1596,7 @@ def _store_agent_plan(database:Database,project_id:str,status:str,message:str,sk
     return plan_id
 
 
-async def _create_agent_plan(body:AgentPlanCreateV3,request:Request)->dict[str,Any]:
+async def _create_agent_plan(body:AgentPlanCreateV4,request:Request)->dict[str,Any]:
     database=db(request); pdata=await read_project(body.project_id,request); graph=ensure_graph(database,body.project_id)
     if body.project_revision is not None and body.project_revision!=pdata["revision"]:raise HTTPException(409,{"message":"项目版本已变化，请刷新后重新生成 Agent 计划。","current_revision":pdata["revision"]})
     if body.graph_revision is not None and body.graph_revision!=graph["revision"]:raise HTTPException(409,{"message":"工作流图版本已变化，请刷新后重新生成 Agent 计划。","current_revision":graph["revision"]})
@@ -1612,7 +1612,7 @@ async def _create_agent_plan(body:AgentPlanCreateV3,request:Request)->dict[str,A
     provider_result,profile,model=await _submit_agent_provider(database,body,snapshot,skill,bundle)
     try:
         normalized=normalize_agent_patch(provider_result,pdata["revision"],graph["revision"],bundle_snapshot)
-        patch=ensure_workspace_operations(AgentPatchV3.model_validate(normalized["patch"]),graph["graph"],bundle_snapshot)
+        patch=ensure_workspace_operations(AgentPatchV4.model_validate(normalized["patch"]),graph["graph"],bundle_snapshot)
         normalized["patch"]=patch.model_dump(mode="json")
         preview=patch_preview(graph["graph"],patch)
     except HTTPException:
@@ -1624,21 +1624,21 @@ async def _create_agent_plan(body:AgentPlanCreateV3,request:Request)->dict[str,A
 
 
 @app.post("/api/v2/agent/plans")
-async def create_agent_plan(body:AgentPlanCreateV3,request:Request):return await _create_agent_plan(body,request)
+async def create_agent_plan(body:AgentPlanCreateV4,request:Request):return await _create_agent_plan(body,request)
 
 
 @app.post("/api/v2/projects/{project_id}/agent/plans")
-async def create_project_agent_plan(project_id:str,body:AgentPlanCreateV3,request:Request):
+async def create_project_agent_plan(project_id:str,body:AgentPlanCreateV4,request:Request):
     if body.project_id!=project_id:raise HTTPException(409,"Agent 计划的项目 ID 与路径不一致。")
     return await _create_agent_plan(body,request)
 
 
-async def _preview_agent_patch(body:AgentPatchPreviewV3,request:Request)->dict[str,Any]:
+async def _preview_agent_patch(body:AgentPatchPreviewV4,request:Request)->dict[str,Any]:
     database=db(request); pdata=await read_project(body.project_id,request); graph=ensure_graph(database,body.project_id)
     if body.project_revision is not None and body.project_revision!=pdata["revision"]:raise HTTPException(409,{"message":"项目版本已变化。","current_revision":pdata["revision"]})
     if body.graph_revision is not None and body.graph_revision!=graph["revision"]:raise HTTPException(409,{"message":"工作流图版本已变化。","current_revision":graph["revision"]})
     try:
-        normalized=normalize_agent_patch({"patch":body.patch},pdata["revision"],graph["revision"],contract_snapshot(contract_bundle())); patch=ensure_workspace_operations(AgentPatchV3.model_validate(normalized["patch"]),graph["graph"],contract_snapshot(contract_bundle())); preview=patch_preview(graph["graph"],patch)
+        normalized=normalize_agent_patch({"patch":body.patch},pdata["revision"],graph["revision"],contract_snapshot(contract_bundle())); patch=ensure_workspace_operations(AgentPatchV4.model_validate(normalized["patch"]),graph["graph"],contract_snapshot(contract_bundle())); preview=patch_preview(graph["graph"],patch)
     except HTTPException:
         raise
     except Exception as exc:raise HTTPException(422,{"message":"结构化 Agent 补丁无效。","details":str(exc)}) from exc
@@ -1646,11 +1646,11 @@ async def _preview_agent_patch(body:AgentPatchPreviewV3,request:Request)->dict[s
 
 
 @app.post("/api/v2/agent/patches/preview")
-async def preview_agent_patch(body:AgentPatchPreviewV3,request:Request):return await _preview_agent_patch(body,request)
+async def preview_agent_patch(body:AgentPatchPreviewV4,request:Request):return await _preview_agent_patch(body,request)
 
 
 @app.post("/api/v2/projects/{project_id}/agent/patches/preview")
-async def preview_project_agent_patch(project_id:str,body:AgentPatchPreviewV3,request:Request):
+async def preview_project_agent_patch(project_id:str,body:AgentPatchPreviewV4,request:Request):
     if body.project_id!=project_id:raise HTTPException(409,"Agent 补丁的项目 ID 与路径不一致。")
     return await _preview_agent_patch(body,request)
 
@@ -1673,7 +1673,7 @@ async def agent_plan_events(plan_id:str,request:Request):
     return {"events":[{"id":row["id"],"event":row["event_type"],"detail":database.decode(row["detail_json"],{}),"created_at":row["created_at"]} for row in rows]}
 
 
-async def _apply_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request)->dict[str,Any]:
+async def _apply_agent_plan(plan_id:str,body:AgentPlanDecisionV4,request:Request)->dict[str,Any]:
     database=db(request); row=_agent_plan_row(database,plan_id)
     if row["status"]!="awaiting_review":raise HTTPException(409,f"Agent 计划不能从 {row['status']} 应用。")
     stored_contract_hash=str(row["contract_hash"] or "") if "contract_hash" in row.keys() else ""
@@ -1684,7 +1684,7 @@ async def _apply_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request
     if pdata["revision"]!=expected_project:raise HTTPException(409,{"message":"项目版本已变化，Agent 补丁已失效。","current_revision":pdata["revision"]})
     if graph["revision"]!=expected_graph:raise HTTPException(409,{"message":"工作流图版本已变化，Agent 补丁已失效。","current_revision":graph["revision"]})
     try:
-        patch=AgentPatchV3.model_validate(database.decode(row["patch_json"],{})); proposed=apply_patch_to_graph(graph["graph"],patch)
+        patch=AgentPatchV4.model_validate(database.decode(row["patch_json"],{})); proposed=apply_patch_to_graph(graph["graph"],patch)
     except HTTPException:
         raise
     except Exception as exc:raise HTTPException(422,{"message":"Agent 补丁无法应用。","details":str(exc)}) from exc
@@ -1709,15 +1709,15 @@ async def _apply_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request
 
 
 @app.post("/api/v2/agent/plans/{plan_id}/apply")
-async def apply_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request):return await _apply_agent_plan(plan_id,body,request)
+async def apply_agent_plan(plan_id:str,body:AgentPlanDecisionV4,request:Request):return await _apply_agent_plan(plan_id,body,request)
 
 
 @app.post("/api/v2/agent/plans/{plan_id}/approve")
-async def approve_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request):return await _apply_agent_plan(plan_id,body,request)
+async def approve_agent_plan(plan_id:str,body:AgentPlanDecisionV4,request:Request):return await _apply_agent_plan(plan_id,body,request)
 
 
 @app.post("/api/v2/agent/plans/{plan_id}/reject")
-async def reject_agent_plan(plan_id:str,body:AgentPlanDecisionV3,request:Request):
+async def reject_agent_plan(plan_id:str,body:AgentPlanDecisionV4,request:Request):
     database=db(request); row=_agent_plan_row(database,plan_id)
     if row["status"]!="awaiting_review":raise HTTPException(409,f"Agent 计划不能从 {row['status']} 拒绝。")
     now=utcnow(); decision={**database.decode(row["decision_json"],{}),"detail":redact(body.detail)}
@@ -1736,7 +1736,7 @@ async def list_agent_candidates(project_id:str,request:Request):
 # ---------------------------------------------------------------------------
 # Desktop Agent workspace: durable conversations, local attachments and
 # resumable supervised runs.  This surface is intentionally additive; the
-# older V3 Agent plan routes above remain available as a compatibility path.
+# older V4 Agent plan routes above remain available as a compatibility path.
 # ---------------------------------------------------------------------------
 
 ASSISTANT_TERMINAL_STATUSES = {"succeeded", "failed", "canceled", "stale_contract"}
@@ -2246,7 +2246,7 @@ def _assistant_normalize_operation_content(operation: dict[str, Any], doc: dict[
                 "rule_sources":deepcopy(source_spec.get("rule_sources") or source_spec.get("ruleSources") or director_rule_profile()["sources"]),
             }
         try:
-            StoryDocumentUpdateV3.model_validate({"expected_revision": 1, "spec": proposed.get("storySpec") or {}, "script": proposed.get("script") or "", "scenes": proposed.get("scenes") or [], "shots": proposed.get("shots") or []})
+            StoryDocumentUpdateV4.model_validate({"expected_revision": 1, "spec": proposed.get("storySpec") or {}, "script": proposed.get("script") or "", "scenes": proposed.get("scenes") or [], "shots": proposed.get("shots") or []})
         except Exception as exc:
             raise ProviderError(f"Agent 剧本/分镜候选未通过字段校验：{exc}", "validation", 502) from exc
         storyboard_issues = _assistant_storyboard_issues(proposed, proposed_content)
@@ -2266,15 +2266,15 @@ def _assistant_normalize_operation_content(operation: dict[str, Any], doc: dict[
         timeline_content = content.get("document") if isinstance(content.get("document"), dict) else content
         if "tracks" in timeline_content:
             try:
-                TimelineUpdateV3.model_validate({"expected_revision": 1, "document": timeline_content})
+                TimelineUpdateV4.model_validate({"expected_revision": 1, "document": timeline_content})
             except Exception as exc:
                 raise ProviderError(f"Agent 时间线候选未通过结构校验：{exc}", "validation", 502) from exc
     return result
 
 
-def _assistant_validate_patch(patch: AgentPatchV3, doc: dict[str, Any], bundle: dict[str, Any], attachment_ids: list[str]) -> AgentPatchV3:
+def _assistant_validate_patch(patch: AgentPatchV4, doc: dict[str, Any], bundle: dict[str, Any], attachment_ids: list[str]) -> AgentPatchV4:
     operations = [_assistant_normalize_operation_content(item.model_dump(mode="json"), doc, bundle, attachment_ids) for item in patch.workspace_operations]
-    return patch.model_copy(update={"workspace_operations": [AgentWorkspaceOperationV3.model_validate(item) for item in operations]})
+    return patch.model_copy(update={"workspace_operations": [AgentWorkspaceOperationV4.model_validate(item) for item in operations]})
 
 
 def _assistant_sse(event: dict[str, Any]) -> str:
@@ -2315,7 +2315,7 @@ async def list_assistant_conversations(project_id: str, request: Request, assist
 
 
 @app.post("/api/v2/projects/{project_id}/assistant/conversations")
-async def create_assistant_conversation(project_id: str, body: AssistantConversationCreateV3, request: Request):
+async def create_assistant_conversation(project_id: str, body: AssistantConversationCreateV4, request: Request):
     database = db(request)
     await read_project(project_id, request)
     conversation_id = f"CONV_{secrets.token_hex(8)}"
@@ -2327,7 +2327,7 @@ async def create_assistant_conversation(project_id: str, body: AssistantConversa
 
 
 @app.patch("/api/v2/assistant/conversations/{conversation_id}")
-async def update_assistant_conversation(conversation_id: str, body: AssistantConversationUpdateV3, request: Request):
+async def update_assistant_conversation(conversation_id: str, body: AssistantConversationUpdateV4, request: Request):
     database = db(request)
     _assistant_conversation_row(database, conversation_id)
     title = body.title.strip()
@@ -2625,10 +2625,10 @@ async def _execute_assistant_run(application: FastAPI, run_id: str) -> None:
                 user_message=str(message_row["content"] or ""),
                 voice_design_only=voice_design_only,
             )
-            patch = AgentPatchV3.model_validate(normalized["patch"])
+            patch = AgentPatchV4.model_validate(normalized["patch"])
         else:
             normalized = normalize_agent_patch(provider_result, int(project_row["revision"]), int(graph["revision"]), contract_snapshot(bundle), attachment_ids)
-            patch = ensure_workspace_operations(AgentPatchV3.model_validate(normalized["patch"]), graph["graph"], contract_snapshot(bundle), attachment_ids)
+            patch = ensure_workspace_operations(AgentPatchV4.model_validate(normalized["patch"]), graph["graph"], contract_snapshot(bundle), attachment_ids)
             patch = _assistant_validate_patch(patch, project_document, bundle, attachment_ids)
         normalized["patch"] = patch.model_dump(mode="json")
         preview = patch_preview(graph["graph"], patch)
@@ -2691,7 +2691,7 @@ async def _execute_assistant_run(application: FastAPI, run_id: str) -> None:
 
 
 @app.post("/api/v2/projects/{project_id}/assistant/stream")
-async def assistant_stream_v3(project_id: str, body: AssistantRunCreateV3, request: Request):
+async def assistant_stream_v4(project_id: str, body: AssistantRunCreateV4, request: Request):
     if body.project_id != project_id:
         raise HTTPException(409, "创作助手运行的项目 ID 与路径不一致。")
     assistant_mode = body.assistant_mode
@@ -2811,7 +2811,7 @@ async def assistant_run_events(run_id: str, request: Request, after_sequence: in
 
 
 @app.post("/api/v2/assistant/runs/{run_id}/external-confirmation")
-async def assistant_external_confirmation(run_id: str, body: AssistantExternalConfirmationV3, request: Request):
+async def assistant_external_confirmation(run_id: str, body: AssistantExternalConfirmationV4, request: Request):
     database = db(request)
     row = _assistant_run_row(database, run_id)
     if row["status"] != "awaiting_external_confirmation":
@@ -2887,7 +2887,7 @@ async def restore_assistant_conversation(conversation_id: str, request: Request)
     return {"conversation": _assistant_conversation_payload(database, row), "message": "会话已恢复为活动状态。"}
 
 
-def _assistant_selected_patch(patch: AgentPatchV3, selected_ids: set[str]) -> AgentPatchV3:
+def _assistant_selected_patch(patch: AgentPatchV4, selected_ids: set[str]) -> AgentPatchV4:
     """Reduce graph operations to the items the user checked in the review UI."""
 
     operations = list(patch.workspace_operations)
@@ -2947,7 +2947,7 @@ def _assistant_story_candidate(doc: dict[str, Any], content: Any) -> dict[str, A
             "rule_sources":deepcopy(source_spec.get("rule_sources") or source_spec.get("ruleSources") or director_rule_profile()["sources"]),
         }
     try:
-        StoryDocumentUpdateV3.model_validate({
+        StoryDocumentUpdateV4.model_validate({
             "expected_revision": 1,
             "spec": proposed.get("storySpec") or {},
             "script": proposed.get("script") or "",
@@ -3111,7 +3111,7 @@ def _assistant_candidate_row(database: Database, connection: sqlite3.Connection,
 
 
 @app.post("/api/v2/assistant/runs/{run_id}/apply")
-async def apply_assistant_run(run_id: str, body: AssistantApplyV3, request: Request):
+async def apply_assistant_run(run_id: str, body: AssistantApplyV4, request: Request):
     database = db(request)
     run = _assistant_run_row(database, run_id)
     if str(run["assistant_mode"] if "assistant_mode" in run.keys() else "general") == AUDIO_ASSISTANT_MODE:
@@ -3153,7 +3153,7 @@ async def apply_assistant_run(run_id: str, body: AssistantApplyV3, request: Requ
         doc = database.decode(project_row["document_json"], {}) or {}
         graph = database.decode(graph_row["graph_json"], {}) or {}
         timeline_document = database.decode(timeline_row["document_json"], {}) if timeline_row else None
-        patch = AgentPatchV3.model_validate(database.decode(plan_row["patch_json"], {}) or {})
+        patch = AgentPatchV4.model_validate(database.decode(plan_row["patch_json"], {}) or {})
         patch = ensure_workspace_operations(patch, graph, contract_snapshot(current_bundle), [str(item["id"]) for item in _assistant_internal_attachments(database, str(run["source_message_id"]))])
         selected_ids = {str(item) for item in body.selected_operation_ids}
         selected_operations = [item for item in patch.workspace_operations if item.id in selected_ids]
@@ -3205,7 +3205,7 @@ async def apply_assistant_run(run_id: str, body: AssistantApplyV3, request: Requ
                 timeline_candidate = content.get("document") if isinstance(content, dict) and isinstance(content.get("document"), dict) else content
                 if not isinstance(timeline_candidate, dict):
                     raise HTTPException(422, "时间线候选必须是 JSON 对象。")
-                timeline_model = TimelineUpdateV3.model_validate({"expected_revision": 1, "document": timeline_candidate}).document
+                timeline_model = TimelineUpdateV4.model_validate({"expected_revision": 1, "document": timeline_candidate}).document
                 if not timeline_row:
                     raise HTTPException(404, "项目时间线尚未初始化。")
                 timeline_document = timeline_model.model_dump(mode="json")
@@ -3256,7 +3256,7 @@ async def apply_assistant_run(run_id: str, body: AssistantApplyV3, request: Requ
 
 
 @app.post("/api/v2/assistant/runs/{run_id}/reject")
-async def reject_assistant_run(run_id: str, body: AssistantRejectV3, request: Request):
+async def reject_assistant_run(run_id: str, body: AssistantRejectV4, request: Request):
     database = db(request)
     row = _assistant_run_row(database, run_id)
     result = database.decode(row["result_json"], {}) or {}
@@ -3274,7 +3274,7 @@ async def reject_assistant_run(run_id: str, body: AssistantRejectV3, request: Re
 
 
 @app.post("/api/v2/assistant/runs/{run_id}/audio-draft")
-async def apply_audio_assistant_draft(run_id: str, body: AudioAssistantDraftApplyV3, request: Request):
+async def apply_audio_assistant_draft(run_id: str, body: AudioAssistantDraftApplyV4, request: Request):
     """Apply selected voice-preparation operations to a browser draft only.
 
     This endpoint intentionally does not use the generic Agent apply path.  It
@@ -3366,7 +3366,7 @@ async def apply_audio_assistant_draft(run_id: str, body: AudioAssistantDraftAppl
 
     patch_data = result.get("patch") if isinstance(result.get("patch"), dict) else {}
     try:
-        patch = AgentPatchV3.model_validate(patch_data)
+        patch = AgentPatchV4.model_validate(patch_data)
     except Exception as exc:
         raise HTTPException(422, {"message": "声音助手方案中的草稿操作无效。", "details": str(exc)}) from exc
     operations = [item.model_dump(mode="json") for item in patch.workspace_operations]
@@ -3417,7 +3417,7 @@ async def apply_audio_assistant_draft(run_id: str, body: AudioAssistantDraftAppl
 
 
 @app.get("/api/v2/providers/catalog")
-async def provider_catalog_v3(request:Request):
+async def provider_catalog_v4(request:Request):
     database=db(request)
     with database.connect() as c:rows=c.execute("SELECT * FROM provider_profiles WHERE provider_type NOT IN ('openai','openai_compatible') ORDER BY display_name").fetchall()
     providers=[]
@@ -3428,22 +3428,22 @@ async def provider_catalog_v3(request:Request):
 
 
 @app.get("/api/v2/providers/{provider_id}/contract")
-async def provider_contract_v3(provider_id:str,request:Request):
+async def provider_contract_v4(provider_id:str,request:Request):
     profile=get_profile(db(request),provider_id)
     contract=provider_contract(profile)
     return {"provider":public_profile(profile),"contract":contract}
 
 
 @app.post("/api/v2/providers/{provider_id}/probe")
-async def probe_provider_v3(provider_id:str,request:Request):
+async def probe_provider_v4(provider_id:str,request:Request):
     # Keep the compatibility endpoint on the same failure-classifying path as
     # the settings UI.  In particular, invalid credentials must replace the
     # previous health result instead of leaving the client in a stale state.
-    return await settings_provider_probe_v3(provider_id, request)
+    return await settings_provider_probe_v4(provider_id, request)
 
 
 @app.post("/api/v2/providers/route-preview")
-async def provider_route_preview_v3(body:ProviderRoutePreviewV3,request:Request):
+async def provider_route_preview_v4(body:ProviderRoutePreviewV4,request:Request):
     database=db(request)
     binding_capability={"vision":"orchestrator","image_edit":"image"}.get(body.capability,body.capability)
     profile,bound_model=resolve_profile(database,binding_capability,body.provider_profile_id)
@@ -3505,7 +3505,7 @@ def _settings_provider(database: Database, provider_id: str) -> dict[str, Any]:
     with database.connect() as connection:
         row = connection.execute("SELECT * FROM provider_profiles WHERE id=?", (provider_id,)).fetchone()
     if not row:
-        raise HTTPException(404, "V3 Provider 配置不存在。")
+        raise HTTPException(404, "V4 Provider 配置不存在。")
     if str(row["provider_type"]) in LEGACY_PROVIDER_TYPES:
         raise HTTPException(410, "OpenAI Provider 已从工作台移除。")
     return _settings_provider_payload(database, row)
@@ -3523,7 +3523,7 @@ def _settings_system_status(database: Database) -> dict[str, Any]:
     providers = _settings_providers(database)
     minimax = next((item for item in providers if item["provider_type"] == "minimax"), None)
     return {
-        "runtime": "v3-only",
+        "runtime": "v4-only",
         "version": app.version,
         "schema_version": SCHEMA_VERSION,
         "database": {"path": str(database.path), "status": "ready"},
@@ -3634,7 +3634,7 @@ def _settings_binding_payload(database: Database) -> list[dict[str, Any]]:
 
 
 @app.get("/api/v2/settings")
-async def settings_v3(request: Request):
+async def settings_v4(request: Request):
     database = db(request)
     _auto_match_capability_bindings(database)
     return {
@@ -3651,34 +3651,34 @@ async def settings_v3(request: Request):
 
 
 @app.get("/api/v2/settings/providers")
-async def settings_provider_list_v3(request: Request):
+async def settings_provider_list_v4(request: Request):
     return {"providers": _settings_providers(db(request)), "presets": [{"preset_id": key, **PROVIDER_PRESETS[key]} for key in VISIBLE_PROVIDER_PRESET_IDS]}
 
 
 @app.post("/api/v2/settings/providers")
-async def settings_provider_create_v3(body: ProviderProfileCreate, request: Request):
+async def settings_provider_create_v4(body: ProviderProfileCreate, request: Request):
     profile = await add_profile(body, request)
     return {"provider": profile}
 
 
 @app.post("/api/v2/settings/providers/from-preset/{preset_id}")
-async def settings_provider_from_preset_v3(preset_id: str, request: Request):
+async def settings_provider_from_preset_v4(preset_id: str, request: Request):
     preset = PROVIDER_PRESETS.get(preset_id)
     if not preset:
-        raise HTTPException(404, "V3 Provider 预设不存在。")
+        raise HTTPException(404, "V4 Provider 预设不存在。")
     body = ProviderProfileCreate(**{key: value for key, value in preset.items() if key != "model_options"})
     profile = await add_profile(body, request)
     return {"provider": profile, "preset_id": preset_id}
 
 
 @app.patch("/api/v2/settings/providers/{provider_id}")
-async def settings_provider_update_v3(provider_id: str, body: ProviderProfileUpdate, request: Request):
+async def settings_provider_update_v4(provider_id: str, body: ProviderProfileUpdate, request: Request):
     profile = await update_profile(provider_id, body, request)
     return {"provider": profile}
 
 
 @app.delete("/api/v2/settings/providers/{provider_id}")
-async def settings_provider_delete_v3(provider_id: str, request: Request):
+async def settings_provider_delete_v4(provider_id: str, request: Request):
     result = await remove_profile(provider_id, request)
     return {**result, "providers": _settings_providers(db(request))}
 
@@ -3754,7 +3754,7 @@ def _invalidate_minimax_region_health(database: Database, provider_id: str, regi
 
 
 @app.post("/api/v2/settings/providers/{provider_id}/credential")
-async def settings_provider_credential_v3(provider_id: str, body: CredentialWrite, request: Request):
+async def settings_provider_credential_v4(provider_id: str, body: CredentialWrite, request: Request):
     database = db(request)
     profile = get_profile(database, provider_id)
     region = _credential_region_for_profile(profile, body.region)
@@ -3784,7 +3784,7 @@ async def settings_provider_credential_v3(provider_id: str, body: CredentialWrit
 
 
 @app.post("/api/v2/settings/providers/{provider_id}/credential/import")
-async def settings_provider_credential_import_v3(provider_id: str, body: CredentialImport, request: Request):
+async def settings_provider_credential_import_v4(provider_id: str, body: CredentialImport, request: Request):
     profile = get_profile(db(request), provider_id)
     region = body.region
     if profile["provider_type"] == "minimax":
@@ -3803,11 +3803,11 @@ async def settings_provider_credential_import_v3(provider_id: str, body: Credent
     value = os.environ.get(body.environment_variable, "")
     if not value:
         raise HTTPException(404, f"环境变量 {body.environment_variable} 未设置。")
-    return await settings_provider_credential_v3(provider_id, CredentialWrite(api_key=value, region=region), request)
+    return await settings_provider_credential_v4(provider_id, CredentialWrite(api_key=value, region=region), request)
 
 
 @app.delete("/api/v2/settings/providers/{provider_id}/credential")
-async def settings_provider_credential_clear_v3(provider_id: str, request: Request, region: str | None = None):
+async def settings_provider_credential_clear_v4(provider_id: str, request: Request, region: str | None = None):
     database = db(request)
     profile = get_profile(database, provider_id)
     selected_region = _credential_region_for_profile(profile, region)
@@ -3823,7 +3823,7 @@ async def settings_provider_credential_clear_v3(provider_id: str, request: Reque
 
 
 @app.post("/api/v2/settings/providers/{provider_id}/probe")
-async def settings_provider_probe_v3(provider_id: str, request: Request, region: str | None = None):
+async def settings_provider_probe_v4(provider_id: str, request: Request, region: str | None = None):
     database = db(request)
     base_profile = get_profile(database, provider_id)
     profile = _regional_minimax_profile(base_profile, region) if base_profile.get("provider_type") == "minimax" and region else base_profile
@@ -3899,7 +3899,7 @@ async def settings_provider_probe_v3(provider_id: str, request: Request, region:
 
 
 @app.get("/api/v2/settings/providers/{provider_id}/models")
-async def settings_provider_models_v3(provider_id: str, request: Request):
+async def settings_provider_models_v4(provider_id: str, request: Request):
     profile = get_profile(db(request), provider_id)
     health = profile.get("last_health") or {}
     return {"provider_id": provider_id, "models": health.get("models", []), "model_catalog": health.get("model_catalog", []), "model_readiness": health.get("model_readiness", {}), "last_probe": health.get("checked_at")}
@@ -3982,12 +3982,12 @@ def _minimax_tts_routes(database: Database) -> list[dict[str, Any]]:
 
 
 @app.get("/api/v2/providers/{provider_id}/voices")
-async def provider_voice_catalog_v3(provider_id: str, request: Request):
+async def provider_voice_catalog_v4(provider_id: str, request: Request):
     return _minimax_voice_catalog_payload(db(request), provider_id, request.query_params.get("region"))
 
 
 @app.post("/api/v2/providers/{provider_id}/voices/refresh")
-async def refresh_provider_voice_catalog_v3(provider_id: str, request: Request):
+async def refresh_provider_voice_catalog_v4(provider_id: str, request: Request):
     # Reuse the provider probe boundary.  It is read-only upstream and never
     # calls T2A, so refreshing the catalogue cannot create a billable Take.
     try:
@@ -3995,24 +3995,24 @@ async def refresh_provider_voice_catalog_v3(provider_id: str, request: Request):
     except Exception:
         body = {}
     region = str(body.get("region") or request.query_params.get("region") or "").strip().lower() or None
-    probe = await settings_provider_probe_v3(provider_id, request, region=region)
+    probe = await settings_provider_probe_v4(provider_id, request, region=region)
     return {"catalog": _minimax_voice_catalog_payload(db(request), provider_id, region), "probe": probe.get("probe")}
 
 
 @app.get("/api/v2/settings/capability-bindings")
-async def settings_binding_list_v3(request: Request):
+async def settings_binding_list_v4(request: Request):
     return {"bindings": _settings_binding_payload(db(request))}
 
 
 @app.post("/api/v2/settings/capability-bindings/auto-match")
-async def settings_binding_auto_match_v3(request: Request):
+async def settings_binding_auto_match_v4(request: Request):
     database = db(request)
     changes = _auto_match_capability_bindings(database)
     return {"ok": True, "changes": changes, "bindings": _settings_binding_payload(database)}
 
 
 @app.put("/api/v2/settings/capability-bindings")
-async def settings_binding_put_v3(body: CapabilityBinding, request: Request):
+async def settings_binding_put_v4(body: CapabilityBinding, request: Request):
     database = db(request)
     profile = get_profile(database, body.provider_profile_id)
     contract = provider_contract(profile)
@@ -4030,12 +4030,12 @@ async def settings_binding_put_v3(body: CapabilityBinding, request: Request):
 
 
 @app.get("/api/v2/settings/orchestrator-model-options")
-async def settings_orchestrator_models_v3():
+async def settings_orchestrator_models_v4():
     return {"default": DEFAULT_ORCHESTRATOR_MODEL, "models": ORCHESTRATOR_MODEL_OPTIONS}
 
 
 @app.get("/api/v2/artifacts/{artifact_id}/lineage")
-async def artifact_lineage_v3(artifact_id:str,request:Request):
+async def artifact_lineage_v4(artifact_id:str,request:Request):
     database=db(request)
     with database.connect() as c:
         artifact=c.execute("SELECT id,project_id,artifact_type,logical_asset_id,version,status,sha256,created_at FROM artifacts WHERE id=?",(artifact_id,)).fetchone()
@@ -4046,7 +4046,7 @@ async def artifact_lineage_v3(artifact_id:str,request:Request):
 
 
 @app.post("/api/v2/artifacts/{artifact_id}/lineage")
-async def create_artifact_lineage_v3(artifact_id:str,body:ArtifactLineageCreateV3,request:Request):
+async def create_artifact_lineage_v4(artifact_id:str,body:ArtifactLineageCreateV4,request:Request):
     database=db(request)
     with database.connect() as c:
         child=c.execute("SELECT id,project_id FROM artifacts WHERE id=?",(artifact_id,)).fetchone()
@@ -4188,14 +4188,14 @@ def _timeline_preflight(database:Database, project_id:str, envelope:dict[str,Any
 
 
 @app.get("/api/v2/projects/{project_id}/timeline")
-async def read_timeline_v3(project_id:str,request:Request):return ensure_timeline(db(request),project_id)
+async def read_timeline_v4(project_id:str,request:Request):return ensure_timeline(db(request),project_id)
 
 
 @app.get("/api/v2/projects/{project_id}/timeline/preflight")
-async def preflight_timeline_v3(project_id:str,request:Request):
+async def preflight_timeline_v4(project_id:str,request:Request):
     return _timeline_preflight(db(request),project_id,ensure_timeline(db(request),project_id))
 @app.put("/api/v2/projects/{project_id}/timeline")
-async def write_timeline_v3(project_id:str,body:TimelineUpdateV3,request:Request):
+async def write_timeline_v4(project_id:str,body:TimelineUpdateV4,request:Request):
     database=db(request)
     ensure_timeline(database,project_id)
     envelope=save_timeline(database,project_id,body.document,body.expected_revision)
@@ -4204,12 +4204,12 @@ async def write_timeline_v3(project_id:str,body:TimelineUpdateV3,request:Request
 
 
 @app.post("/api/v2/projects/{project_id}/timeline/assemble")
-async def assemble_timeline_v3(project_id:str,body:TimelineAssemblyRequestV3,request:Request):
+async def assemble_timeline_v4(project_id:str,body:TimelineAssemblyRequestV4,request:Request):
     return assemble_approved_timeline(db(request),project_id,body.expected_revision,body.include_audio,body.replace_existing,DATA_DIR/"projects")
 
 
 @app.post("/api/v2/projects/{project_id}/timeline/preview")
-async def preview_timeline_v3(project_id:str,body:TimelinePreviewRequestV3,request:Request):
+async def preview_timeline_v4(project_id:str,body:TimelinePreviewRequestV4,request:Request):
     database=db(request)
     envelope=ensure_timeline(database,project_id)
     if envelope["revision"]!=body.expected_revision:
@@ -4219,7 +4219,7 @@ async def preview_timeline_v3(project_id:str,body:TimelinePreviewRequestV3,reque
     render_id=f"PREVIEW_{secrets.token_hex(8)}"; now=utcnow()
     with database.connect() as connection:
         connection.execute("INSERT INTO render_jobs_v6(id,project_id,timeline_revision,status,request_json,manifest_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?)",(render_id,project_id,envelope["revision"],"queued",database.encode(request_data),database.encode(manifest),now,now))
-    schedule_v3_render(request.app,render_id)
+    schedule_v4_render(request.app,render_id)
     return _render_job_payload(database,_render_job(database,render_id))
 
 
@@ -4248,7 +4248,7 @@ def _timeline_artifact_rows(database: Database, project_id: str, timeline: dict[
         if track.get("kind") in {"video", "overlay", "dialogue", "music", "ambience", "sfx"} and clip.get("source") and not clip.get("artifact_id")
     ]
     if source_only:
-        raise HTTPException(422, {"message": "V3 渲染只允许使用当前项目 artifact，不能直接使用文件路径。", "clip_ids": source_only})
+        raise HTTPException(422, {"message": "V4 渲染只允许使用当前项目 artifact，不能直接使用文件路径。", "clip_ids": source_only})
     artifact_ids = {
         str(clip.get("artifact_id"))
         for track in timeline.get("tracks", [])
@@ -4357,7 +4357,7 @@ def _render_job(database: Database, render_id: str) -> sqlite3.Row:
 
 
 @app.post("/api/v2/renders/estimate")
-async def estimate_render_v3(body:RenderEstimateV3,request:Request):
+async def estimate_render_v4(body:RenderEstimateV4,request:Request):
     database = db(request)
     envelope = ensure_timeline(database, body.project_id)
     if body.timeline_revision is not None and body.timeline_revision != envelope["revision"]:
@@ -4382,7 +4382,7 @@ async def estimate_render_v3(body:RenderEstimateV3,request:Request):
 
 
 @app.post("/api/v2/renders")
-async def create_render_v3(body:RenderCreateV3,request:Request):
+async def create_render_v4(body:RenderCreateV4,request:Request):
     database = db(request)
     envelope = ensure_timeline(database, body.project_id)
     if body.timeline_revision is not None and body.timeline_revision != envelope["revision"]:
@@ -4409,18 +4409,18 @@ async def create_render_v3(body:RenderCreateV3,request:Request):
                 (render_id, body.project_id, envelope["revision"], status, database.encode(request_data), database.encode(manifest), fingerprint, now, now),
             )
     if created and status == "queued":
-        schedule_v3_render(request.app, render_id)
+        schedule_v4_render(request.app, render_id)
     payload=_render_job_payload(database, _render_job(database, render_id));payload["idempotent_replay"]=not created
     return payload
 
 
 @app.get("/api/v2/renders/{render_id}")
-async def read_render_v3(render_id:str,request:Request):
+async def read_render_v4(render_id:str,request:Request):
     return _render_job_payload(db(request), _render_job(db(request), render_id))
 
 
 @app.post("/api/v2/renders/{render_id}/approve")
-async def approve_render_v3(render_id:str,body:RenderDecisionV3,request:Request):
+async def approve_render_v4(render_id:str,body:RenderDecisionV4,request:Request):
     database = db(request)
     row = _render_job(database, render_id)
     if row["status"] != "awaiting_confirmation":
@@ -4445,12 +4445,12 @@ async def approve_render_v3(render_id:str,body:RenderDecisionV3,request:Request)
         updated=connection.execute("UPDATE render_jobs_v6 SET status='queued',request_json=?,confirmed_at=?,approval_consumed_at=?,updated_at=? WHERE id=? AND status='awaiting_confirmation' AND approval_consumed_at IS NULL", (database.encode(request_data), now, now, now, render_id))
         approved=updated.rowcount==1
     if not approved:raise HTTPException(409,"渲染审批令牌不存在或已被消费。")
-    schedule_v3_render(request.app, render_id)
+    schedule_v4_render(request.app, render_id)
     return _render_job_payload(database, _render_job(database, render_id))
 
 
 @app.post("/api/v2/renders/{render_id}/cancel")
-async def cancel_render_v3(render_id:str,request:Request):
+async def cancel_render_v4(render_id:str,request:Request):
     database = db(request)
     row = _render_job(database, render_id)
     if row["status"] not in {"awaiting_confirmation", "queued", "running"}:
@@ -4461,7 +4461,7 @@ async def cancel_render_v3(render_id:str,request:Request):
 
 
 @app.post("/api/v2/projects/{project_id}/proxies")
-async def create_proxy_v3(project_id:str,body:ProxyCreateV3,request:Request,background:BackgroundTasks):
+async def create_proxy_v4(project_id:str,body:ProxyCreateV4,request:Request,background:BackgroundTasks):
     database = db(request)
     with database.connect() as connection:
         artifact = connection.execute("SELECT * FROM artifacts WHERE id=? AND project_id=?", (body.artifact_id, project_id)).fetchone()
@@ -4488,7 +4488,7 @@ async def create_proxy_v3(project_id:str,body:ProxyCreateV3,request:Request,back
 
 
 @app.get("/api/v2/proxies/{proxy_id}")
-async def read_proxy_v3(proxy_id:str,request:Request):
+async def read_proxy_v4(proxy_id:str,request:Request):
     database = db(request)
     with database.connect() as connection:
         row = connection.execute("SELECT * FROM media_proxies_v6 WHERE id=?", (proxy_id,)).fetchone()
@@ -4505,19 +4505,19 @@ async def read_proxy_v3(proxy_id:str,request:Request):
 
 
 @app.get("/api/v2/projects/{project_id}/story")
-async def read_story_v3(project_id:str,request:Request):
+async def read_story_v4(project_id:str,request:Request):
     doc,revision=await read_project_doc(request,project_id)
     return {"project_id":project_id,"revision":revision,"story":story_document(doc),"checks":story_checks(doc)}
 
 
 @app.get("/api/v2/projects/{project_id}/story/checks")
-async def check_story_v3(project_id:str,request:Request):
+async def check_story_v4(project_id:str,request:Request):
     doc,revision=await read_project_doc(request,project_id)
     return {"project_id":project_id,"revision":revision,"checks":story_checks(doc)}
 
 
 @app.put("/api/v2/projects/{project_id}/story")
-async def write_story_v3(project_id:str,body:StoryDocumentUpdateV3,request:Request):
+async def write_story_v4(project_id:str,body:StoryDocumentUpdateV4,request:Request):
     doc,revision=await read_project_doc(request,project_id)
     if revision!=body.expected_revision:
         raise HTTPException(409,{"message":"故事文档已有更新，请刷新后重试。","current_revision":revision})
@@ -4604,7 +4604,7 @@ def _shot_diff(before:list[dict[str,Any]],after:list[dict[str,Any]])->dict[str,A
 
 
 @app.get("/api/v2/projects/{project_id}/story/diff")
-async def story_diff_v3(project_id:str,request:Request):
+async def story_diff_v4(project_id:str,request:Request):
     from_id=request.query_params.get("from_version_id")
     to_id=request.query_params.get("to_version_id")
     if not from_id or not to_id:raise HTTPException(422,"差异审阅需要 from_version_id 和 to_version_id。")
@@ -4622,7 +4622,7 @@ async def story_diff_v3(project_id:str,request:Request):
 
 
 @app.post("/api/v2/projects/{project_id}/story/rollback")
-async def story_rollback_v3(project_id:str,body:StoryRollbackV3,request:Request):
+async def story_rollback_v4(project_id:str,body:StoryRollbackV4,request:Request):
     doc,revision=await read_project_doc(request,project_id)
     if revision!=body.expected_revision:raise HTTPException(409,{"message":"故事文档已有更新，请刷新后重试。","current_revision":revision})
     found=_find_story_version(doc,body.version_id)
@@ -8075,7 +8075,7 @@ async def assistant(body:AssistantRequest,request:Request):
             selected_node_ids=body.context.get("selected_node_ids",[]) if isinstance(body.context,dict) else []
             if not isinstance(selected_node_ids,list):selected_node_ids=[]
             snapshot=build_input_snapshot(pdata["document"],graph["graph"],body.message,[str(item) for item in selected_node_ids],body.context,{},pdata["revision"],graph["revision"])
-            normalized=normalize_agent_patch(result,pdata["revision"],graph["revision"]); patch=AgentPatchV3.model_validate(normalized["patch"]); preview=patch_preview(graph["graph"],patch)
+            normalized=normalize_agent_patch(result,pdata["revision"],graph["revision"]); patch=AgentPatchV4.model_validate(normalized["patch"]); preview=patch_preview(graph["graph"],patch)
             plan_id=_store_agent_plan(database,body.project_id,"awaiting_review",body.message,body.skill_id,profile["id"],model,pdata["revision"],graph["revision"],snapshot,normalized,preview)
             result={**result,"reply":normalized["reply"],"patch":normalized["patch"],"plan_id":plan_id,"plan_status":"awaiting_review","preview":redact(preview),"requires_confirmation":preview.get("requires_confirmation",False)}
             with database.connect() as c:c.execute("INSERT INTO messages(id,conversation_id,role,content,metadata_json,created_at) VALUES(?,?,\'assistant\',?,?,?)",(f"MSG_{secrets.token_hex(8)}",cid,result.get("reply",""),database.encode({"patch":result.get("patch"),"plan_id":plan_id,"response_id":result.get("response_id")}),utcnow())); c.execute("UPDATE conversations SET updated_at=? WHERE id=?",(utcnow(),cid))
@@ -8166,7 +8166,7 @@ async def generate_image(body:ImageGenerate,request:Request):
     del body,request
     raise HTTPException(410,"内部图片生成已移除，请使用外部图像生成后上传候选文件。")
 @app.post("/api/v2/projects/{project_id}/prompt-versions/{prompt_version_id}/qa")
-async def prompt_qa_decision_v3(project_id:str,prompt_version_id:str,body:PromptQADecision,request:Request):
+async def prompt_qa_decision_v4(project_id:str,prompt_version_id:str,body:PromptQADecision,request:Request):
     database=db(request)
     with database.connect() as connection:row=connection.execute("SELECT project_id FROM prompt_versions WHERE id=?",(prompt_version_id,)).fetchone()
     if not row or row["project_id"]!=project_id:raise HTTPException(404,"Prompt 版本不存在于当前项目。")
@@ -8174,7 +8174,7 @@ async def prompt_qa_decision_v3(project_id:str,prompt_version_id:str,body:Prompt
 
 
 @app.post("/api/v2/projects/{project_id}/assets/{logical_asset_id}/generate-image")
-async def generate_asset_image_v3(project_id:str,logical_asset_id:str,body:AssetImageGenerate,request:Request):
+async def generate_asset_image_v4(project_id:str,logical_asset_id:str,body:AssetImageGenerate,request:Request):
     del project_id,logical_asset_id,body,request
     raise HTTPException(410,"内部图片生成已移除，请使用外部图像生成后上传候选文件。")
 
@@ -8209,7 +8209,7 @@ async def generate_speech(body:SpeechGenerate,request:Request):
 
 
 @app.post("/api/v2/projects/{project_id}/audio/voice-design")
-async def design_project_voice_v3(project_id: str, body: VoiceDesignGenerate, request: Request):
+async def design_project_voice_v4(project_id: str, body: VoiceDesignGenerate, request: Request):
     """Create one paid MiniMax Voice Design preview as a non-adopted candidate.
 
     The returned Voice ID is intentionally *not* inserted into ``voices``.
@@ -8809,14 +8809,14 @@ def _audio_studio_envelope(database: Database, project_id: str, doc: dict[str, A
 
 
 @app.get("/api/v2/projects/{project_id}/audio-studio")
-async def read_audio_studio_v3(project_id: str, request: Request):
+async def read_audio_studio_v4(project_id: str, request: Request):
     database = db(request)
     doc, revision = await read_project_doc(request, project_id)
     return _audio_studio_envelope(database, project_id, doc, revision)
 
 
 @app.put("/api/v2/projects/{project_id}/audio-studio")
-async def write_audio_studio_v3(project_id: str, body: dict[str, Any], request: Request):
+async def write_audio_studio_v4(project_id: str, body: dict[str, Any], request: Request):
     doc, revision = await read_project_doc(request, project_id)
     expected_revision = body.get("expected_revision")
     if expected_revision is not None and int(expected_revision) != revision:
@@ -8842,7 +8842,7 @@ async def write_audio_studio_v3(project_id: str, body: dict[str, Any], request: 
 
 
 @app.post("/api/v2/projects/{project_id}/audio/text-confirmation")
-async def confirm_audio_text_v3(project_id: str, body: AudioTextConfirmationV3, request: Request):
+async def confirm_audio_text_v4(project_id: str, body: AudioTextConfirmationV4, request: Request):
     """Persist an explicit user confirmation for one audio line.
 
     Confirmation is intentionally separate from preparation and generation.
@@ -8924,7 +8924,7 @@ async def confirm_audio_text_v3(project_id: str, body: AudioTextConfirmationV3, 
 
 
 @app.post("/api/v2/projects/{project_id}/audio/tts")
-async def generate_project_speech_v3(project_id: str, body: SpeechGenerate, request: Request):
+async def generate_project_speech_v4(project_id: str, body: SpeechGenerate, request: Request):
     database = db(request)
     doc, revision = await read_project_doc(request, project_id)
     if not body.logical_asset_id:
@@ -9162,7 +9162,7 @@ def _asset_class(asset:dict[str,Any])->str:
     value=metadata.get("asset_class") or metadata.get("assetClass") or asset.get("assetClass")
     if value:
         # Keep legacy aliases such as ``environment`` usable throughout the
-        # V3 pipeline.  The database may contain older records, but every
+        # V4 pipeline.  The database may contain older records, but every
         # routing/readiness/QA decision must use the canonical class.
         return canonical_asset_class(str(value))
     return asset_audit.asset_class_for_skill(asset.get("skill")) or asset_audit.classify_by_role(asset.get("assetRole") or asset.get("type"))
@@ -9238,7 +9238,7 @@ def _asset_readiness_with_prompt_contract(asset:dict[str,Any]|None)->dict[str,An
 
     ``asset_audit.asset_readiness`` intentionally remains a generic media
     calculator.  The workbench adds this narrow visual rule so a historical
-    Prompt without a v3 semantic pack can never satisfy a fusion connection
+    Prompt without a v4 semantic pack can never satisfy a fusion connection
     or production gate merely because an old file/QA row exists.
     """
     report=asset_audit.asset_readiness(asset)
@@ -10355,7 +10355,7 @@ async def asset_board(project_id:str,request:Request):
 
 
 @app.put("/api/v2/projects/{project_id}/asset-board")
-async def update_asset_board(project_id:str,body:AssetBoardUpdateV3,request:Request):
+async def update_asset_board(project_id:str,body:AssetBoardUpdateV4,request:Request):
     database=db(request); current=_ensure_asset_board(database,project_id)
     if current["revision"]!=body.expected_revision:raise HTTPException(409,{"message":"资产画布已在其他位置更新，请刷新后重试。","current_revision":current["revision"]})
     doc,_=await read_project_doc(request,project_id)
@@ -10369,7 +10369,7 @@ async def update_asset_board(project_id:str,body:AssetBoardUpdateV3,request:Requ
 
 
 @app.post("/api/v2/projects/{project_id}/asset-board/sync")
-async def sync_asset_board(project_id:str,body:AssetBoardSyncV3,request:Request):
+async def sync_asset_board(project_id:str,body:AssetBoardSyncV4,request:Request):
     database=db(request); current=_ensure_asset_board(database,project_id)
     if current["revision"]!=body.expected_revision:raise HTTPException(409,{"message":"资产画布已在其他位置更新，请刷新后重试。","current_revision":current["revision"]})
     doc,project_revision=await read_project_doc(request,project_id)
@@ -10390,7 +10390,7 @@ async def sync_asset_board(project_id:str,body:AssetBoardSyncV3,request:Request)
 
 
 @app.post("/api/v2/projects/{project_id}/asset-assignments")
-async def assign_asset_v3(project_id:str,body:AssetAssignmentV3,request:Request):
+async def assign_asset_v4(project_id:str,body:AssetAssignmentV4,request:Request):
     """Atomically keep story requirements, dependency rows and board edges aligned."""
     database=db(request); now=utcnow()
     with database.connect() as connection:
@@ -10453,7 +10453,7 @@ def _artifact_row(database:Database,artifact_id:str,project_id:str|None=None):
 async def _canonicalize_artifact_for_qa(database:Database,request:Request,row:Any):
     """Repair legacy artifact class/owner fields before any QA operation.
 
-    The scene UI can still encounter artifacts created by pre-V3 clients with
+    The scene UI can still encounter artifacts created by pre-V4 clients with
     ``asset_class=environment`` and no QA Owner. Resolve the canonical class
     from both the artifact and its mapped logical asset, then persist the
     repaired routing metadata so the same candidate works in every workspace.
@@ -10576,7 +10576,7 @@ async def asset_intake(
 
 
 @app.post("/api/v2/projects/{project_id}/asset-intake")
-async def asset_intake_v3(
+async def asset_intake_v4(
     project_id:str,
     request:Request,
     file:UploadFile=File(...),
@@ -10609,7 +10609,7 @@ async def asset_intake_v3(
 
 
 @app.post("/api/v2/projects/{project_id}/artifacts/{artifact_id}/map")
-async def map_artifact_v3(project_id:str,artifact_id:str,body:ArtifactMapRequest,request:Request):
+async def map_artifact_v4(project_id:str,artifact_id:str,body:ArtifactMapRequest,request:Request):
     database=db(request); row=_ensure_artifact_project(database,project_id,artifact_id)
     if row["status"] not in {"mapping_required", "technical_validation", "unqualified"}:
         raise HTTPException(409,f"当前状态 {row['status']} 不能重新映射。")
@@ -10617,7 +10617,7 @@ async def map_artifact_v3(project_id:str,artifact_id:str,body:ArtifactMapRequest
 
 
 @app.post("/api/v2/projects/{project_id}/artifacts/{artifact_id}/resolution")
-async def resolve_artifact_v3(project_id:str,artifact_id:str,body:ResolutionRequest,request:Request):
+async def resolve_artifact_v4(project_id:str,artifact_id:str,body:ResolutionRequest,request:Request):
     _ensure_artifact_project(db(request),project_id,artifact_id)
     return await resolve_artifact(artifact_id,body,request)
 
@@ -10629,13 +10629,13 @@ def _ensure_artifact_project(database:Database,project_id:str,artifact_id:str):
 
 
 @app.post("/api/v2/projects/{project_id}/artifacts/{artifact_id}/qa-runs")
-async def create_qa_run_v3(project_id:str,artifact_id:str,body:QARunCreate,request:Request):
+async def create_qa_run_v4(project_id:str,artifact_id:str,body:QARunCreate,request:Request):
     _ensure_artifact_project(db(request),project_id,artifact_id)
     return await create_qa_run(artifact_id,body,request)
 
 
 @app.get("/api/v2/projects/{project_id}/artifacts/{artifact_id}/qa-runs")
-async def list_qa_runs_v3(project_id:str,artifact_id:str,request:Request):
+async def list_qa_runs_v4(project_id:str,artifact_id:str,request:Request):
     database=db(request); _ensure_artifact_project(database,project_id,artifact_id)
     with database.connect() as connection:
         rows=connection.execute("SELECT * FROM asset_qa_runs WHERE project_id=? AND artifact_id=? ORDER BY created_at DESC",(project_id,artifact_id)).fetchall()
@@ -10643,20 +10643,20 @@ async def list_qa_runs_v3(project_id:str,artifact_id:str,request:Request):
 
 
 @app.post("/api/v2/projects/{project_id}/qa-runs/{qa_run_id}/submit")
-async def submit_qa_decision_v3(project_id:str,qa_run_id:str,body:QADecisionSubmit,request:Request):
+async def submit_qa_decision_v4(project_id:str,qa_run_id:str,body:QADecisionSubmit,request:Request):
     database=db(request); run=_qa_row(database,qa_run_id)
     if run["project_id"]!=project_id:raise HTTPException(404,"QA 记录不属于当前项目。")
     return await submit_qa_decision(qa_run_id,body,request)
 
 
 @app.post("/api/v2/projects/{project_id}/artifacts/{artifact_id}/register")
-async def register_asset_v3(project_id:str,artifact_id:str,body:ArtifactRegisterRequest,request:Request):
+async def register_asset_v4(project_id:str,artifact_id:str,body:ArtifactRegisterRequest,request:Request):
     _ensure_artifact_project(db(request),project_id,artifact_id)
     return await register_asset(artifact_id,body,request)
 
 
 @app.delete("/api/v2/projects/{project_id}/artifacts/{artifact_id}")
-async def archive_artifact_v3(project_id:str,artifact_id:str,request:Request):
+async def archive_artifact_v4(project_id:str,artifact_id:str,request:Request):
     """Remove one uploaded candidate from active workspaces without deleting it.
 
     This is intentionally a soft-delete. The physical file, prompt history,
@@ -10738,7 +10738,7 @@ async def archive_artifact_v3(project_id:str,artifact_id:str,request:Request):
 
 
 @app.delete("/api/v2/projects/{project_id}/assets/{logical_asset_id}/active-version")
-async def remove_active_asset_version_v3(project_id: str, logical_asset_id: str, request: Request, expected_revision: int | None = None):
+async def remove_active_asset_version_v4(project_id: str, logical_asset_id: str, request: Request, expected_revision: int | None = None):
     """Withdraw the current registered media before a replacement upload.
 
     This is the registered-asset equivalent of removing a pending thumbnail.
@@ -11391,7 +11391,7 @@ async def asset_library(project_id:str,request:Request,page:int|None=None,page_s
 
 
 @app.get("/api/v2/projects/{project_id}/assets/{logical_asset_id}/workflow")
-async def asset_workflow_v3(project_id:str,logical_asset_id:str,request:Request):
+async def asset_workflow_v4(project_id:str,logical_asset_id:str,request:Request):
     library=await asset_library(project_id,request)
     asset=next((item for item in library["assets"] if item["id"]==logical_asset_id),None)
     if asset is None:raise HTTPException(404,f"逻辑资产 {logical_asset_id} 不存在于当前项目。")
@@ -11407,7 +11407,7 @@ async def asset_audit_queue(project_id:str,request:Request,queue:str|None=None):
 
 
 @app.get("/api/v2/projects/{project_id}/artifacts/{artifact_id}")
-async def artifact_detail_v3(project_id:str,artifact_id:str,request:Request):
+async def artifact_detail_v4(project_id:str,artifact_id:str,request:Request):
     database=db(request); row=_ensure_artifact_project(database,project_id,artifact_id)
     artifact=asset_audit.artifact_payload(database,row)
     artifact["failure_count"]=asset_audit.count_qa_failures(database,project_id,artifact.get("logical_asset_id"))
@@ -11419,13 +11419,13 @@ async def artifact_detail_v3(project_id:str,artifact_id:str,request:Request):
 
 
 @app.get("/api/v2/projects/{project_id}/assets/{logical_asset_id}/prompt-versions")
-async def prompt_versions_v3(project_id:str,logical_asset_id:str,request:Request):
+async def prompt_versions_v4(project_id:str,logical_asset_id:str,request:Request):
     doc,_=await read_project_doc(request,project_id); _project_asset(doc,logical_asset_id)
     return {"project_id":project_id,"logical_asset_id":logical_asset_id,"prompt_versions":asset_audit.list_prompt_versions(db(request),project_id,logical_asset_id)}
 
 
 @app.post("/api/v2/projects/{project_id}/assets/{logical_asset_id}/prompt-versions")
-async def create_prompt_version_v3(project_id:str,logical_asset_id:str,body:PromptCreateRequest,request:Request):
+async def create_prompt_version_v4(project_id:str,logical_asset_id:str,body:PromptCreateRequest,request:Request):
     database=db(request); doc,revision=await read_project_doc(request,project_id); asset=_project_asset(doc,logical_asset_id)
     before_asset=json.loads(json.dumps(asset,ensure_ascii=False))
     cls=_asset_class(asset)
@@ -11457,7 +11457,7 @@ async def create_prompt_version_v3(project_id:str,logical_asset_id:str,body:Prom
 
 
 @app.post("/api/v2/projects/{project_id}/assets")
-async def create_asset_v3(project_id:str,body:AssetCreateV3,request:Request):
+async def create_asset_v4(project_id:str,body:AssetCreateV4,request:Request):
     database=db(request); doc,revision=await read_project_doc(request,project_id)
     if revision!=body.expected_revision:raise HTTPException(409,{"message":"项目已有更新，请刷新后重试。","current_revision":revision})
     if any(str(item.get("name") or "").strip()==body.name.strip() for item in doc.get("assets",[]) if isinstance(item,dict)):
@@ -11538,7 +11538,7 @@ def _copy_asset_database_rows(database:Database,project_id:str,source_asset_id:s
 
 
 @app.post("/api/v2/projects/{project_id}/assets/{logical_asset_id}/duplicate")
-async def duplicate_asset_v3(project_id:str,logical_asset_id:str,body:AssetDuplicateV3,request:Request):
+async def duplicate_asset_v4(project_id:str,logical_asset_id:str,body:AssetDuplicateV4,request:Request):
     database=db(request); doc,revision=await read_project_doc(request,project_id)
     if revision!=body.expected_revision:raise HTTPException(409,{"message":"项目已有更新，请刷新后重试。","current_revision":revision})
     source=_project_asset(doc,logical_asset_id)
@@ -11570,7 +11570,7 @@ async def duplicate_asset_v3(project_id:str,logical_asset_id:str,body:AssetDupli
 
 
 @app.delete("/api/v2/projects/{project_id}/assets/{logical_asset_id}")
-async def delete_asset_v3(project_id:str,logical_asset_id:str,request:Request,expected_revision:int|None=None):
+async def delete_asset_v4(project_id:str,logical_asset_id:str,request:Request,expected_revision:int|None=None):
     database=db(request); doc,revision=await read_project_doc(request,project_id)
     if expected_revision is not None and revision!=expected_revision:raise HTTPException(409,{"message":"项目已有更新，请刷新后重试。","current_revision":revision})
     removed_asset=json.loads(json.dumps(_project_asset(doc,logical_asset_id),ensure_ascii=False))
@@ -12015,7 +12015,7 @@ async def _resolve_preview_paths(database:Database,project_id:str,timeline:dict[
     return paths
 
 
-async def run_v3_render_task(application:FastAPI,render_id:str)->None:
+async def run_v4_render_task(application:FastAPI,render_id:str)->None:
     database: Database = application.state.db
     try:
         row = _render_job(database, render_id)
@@ -12083,8 +12083,8 @@ async def run_v3_render_task(application:FastAPI,render_id:str)->None:
         report_path = delivery_root / "production-report.json"
         project_json.write_text(json.dumps({"project_id": project_id, "timeline_revision": row["timeline_revision"], "timeline": timeline}, ensure_ascii=False, indent=2), encoding="utf-8")
         assets_json.write_text(json.dumps({"project_id": project_id, "inputs": manifest.get("inputs", [])}, ensure_ascii=False, indent=2), encoding="utf-8")
-        artifact = register_artifact(database, project_id, "final_video", master_output, None, "ffmpeg", render_id, {"source_artifact_ids": sorted(paths), "timeline_revision": row["timeline_revision"], "subtitle_count": subtitle_count, "resolution": resolution, "fps": render_timeline_doc["fps"], "variant": "master_burn_in", "qa_owner": "final-render-v3"})
-        clean_artifact = register_artifact(database, project_id, "final_video_clean", clean_output, None, "ffmpeg", render_id, {"source_artifact_ids": sorted(paths), "timeline_revision": row["timeline_revision"], "resolution": resolution, "fps": render_timeline_doc["fps"], "variant": "clean", "qa_owner": "final-render-v3"}) if clean_output else None
+        artifact = register_artifact(database, project_id, "final_video", master_output, None, "ffmpeg", render_id, {"source_artifact_ids": sorted(paths), "timeline_revision": row["timeline_revision"], "subtitle_count": subtitle_count, "resolution": resolution, "fps": render_timeline_doc["fps"], "variant": "master_burn_in", "qa_owner": "final-render-v4"})
+        clean_artifact = register_artifact(database, project_id, "final_video_clean", clean_output, None, "ffmpeg", render_id, {"source_artifact_ids": sorted(paths), "timeline_revision": row["timeline_revision"], "resolution": resolution, "fps": render_timeline_doc["fps"], "variant": "clean", "qa_owner": "final-render-v4"}) if clean_output else None
         outputs=[{"kind":"master_burn_in","label":"主片（烧录字幕）","path":str(master_output),"url":artifact_url(project_id,master_output),"artifact_id":artifact["id"],"sha256":sha256_file(master_output)}]
         if clean_output:
             outputs.append({"kind":"clean","label":"Clean 无字幕版","path":str(clean_output),"url":artifact_url(project_id,clean_output),"artifact_id":clean_artifact["id"] if clean_artifact else None,"sha256":sha256_file(clean_output)})
@@ -12181,7 +12181,7 @@ async def static(path:str):
     decoded=unquote("/"+path)
     if decoded in {"/", "/index.html"}:
         entry=STUDIO_DIST/"index.html"
-        if not entry.is_file():raise HTTPException(503,"FrameFlow V3 尚未构建，请先在 web 目录执行 npm run build。")
+        if not entry.is_file():raise HTTPException(503,"FrameFlow V4 尚未构建，请先在 web 目录执行 npm run build。")
         return FileResponse(entry,headers={"Cache-Control":"no-store, max-age=0","Pragma":"no-cache"})
     if decoded.startswith("/assets/"):
         relative=decoded.removeprefix("/")
@@ -12193,7 +12193,7 @@ async def static(path:str):
 
 
 def _remove_retired_api_routes() -> None:
-    """Keep the V3 surface small while preserving project media delivery."""
+    """Keep the V4 surface small while preserving project media delivery."""
     allowed = ("/api/v2/", "/api/health", "/api/system/doctor", "/api/project-files/")
     app.router.routes = [
         route for route in app.router.routes
@@ -12215,7 +12215,7 @@ def open_browser_when_ready(url:str)->None:
 def main()->None:
     bind_host=ensure_loopback_bind(requested_bind_host())
     url=f"http://{'['+bind_host+']' if ':' in bind_host else bind_host}:{DEFAULT_BIND_PORT}"
-    print(f"FRAMEFLOW V3 工作台：{url}")
+    print(f"FRAMEFLOW V4 工作台：{url}")
     if browser_autostart_enabled():
         threading.Thread(target=open_browser_when_ready,args=(url,),daemon=True).start()
     uvicorn.run("server:app",host=bind_host,port=DEFAULT_BIND_PORT,reload=False)

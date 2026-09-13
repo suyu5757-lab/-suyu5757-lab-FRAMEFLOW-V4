@@ -6,7 +6,7 @@ from collections import defaultdict, deque
 from typing import Any
 
 from .database import Database, utcnow
-from .v3 import PAID_NODE_KINDS
+from .v4 import PAID_NODE_KINDS
 
 
 class NodeExecutionError(RuntimeError):
@@ -242,7 +242,7 @@ async def _execute_one(
     return False
 
 
-async def execute_v3_run(database: Database, run_id: str) -> None:
+async def execute_v4_run(database: Database, run_id: str) -> None:
     state_payload, graph_nodes, state, outputs = _load_state(database, run_id)
     if not state_payload:
         return

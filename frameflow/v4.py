@@ -8,7 +8,7 @@ from fastapi import HTTPException
 
 from .database import Database, utcnow
 from .production_gate import ProductionArtifactGateError, production_artifact_gate
-from .schemas import TimelineClipV3, TimelineDocumentV3, TimelineTrackV3, WorkflowGraphV3
+from .schemas import TimelineClipV4, TimelineDocumentV4, TimelineTrackV4, WorkflowGraphV4
 
 
 PAID_NODE_KINDS = {
@@ -18,7 +18,7 @@ PAID_NODE_KINDS = {
 
 
 def default_graph(project: dict[str, Any]) -> dict[str, Any]:
-    """Create a deterministic V3 projection without changing the V2 document."""
+    """Create a deterministic V4 projection without changing the V2 document."""
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, Any]] = []
     stages = [
@@ -68,7 +68,7 @@ def default_graph(project: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_graph(graph: WorkflowGraphV3) -> None:
+def validate_graph(graph: WorkflowGraphV4) -> None:
     node_ids = [node.id for node in graph.nodes]
     if len(node_ids) != len(set(node_ids)):
         raise HTTPException(422, "工作流节点 ID 不能重复。")
@@ -150,7 +150,7 @@ def ensure_graph(database: Database, project_id: str) -> dict[str, Any]:
         }
 
 
-def save_graph(database: Database, project_id: str, graph: WorkflowGraphV3, expected_revision: int) -> dict[str, Any]:
+def save_graph(database: Database, project_id: str, graph: WorkflowGraphV4, expected_revision: int) -> dict[str, Any]:
     validate_graph(graph)
     now = utcnow()
     graph_data = graph.model_dump(mode="json")
@@ -252,7 +252,7 @@ def select_graph_node_ids(graph: dict[str, Any], node_ids: list[str] | None = No
 def default_timeline(project: dict[str, Any]) -> dict[str, Any]:
     ratio = str(project.get("ratio") or "9:16")
     width, height = (1920, 1080) if ratio == "16:9" else (1080, 1080) if ratio == "1:1" else (1080, 1920)
-    document = TimelineDocumentV3(
+    document = TimelineDocumentV4(
         width=width,
         height=height,
         duration=float(project.get("duration") or 30),
@@ -265,12 +265,12 @@ def default_timeline(project: dict[str, Any]) -> dict[str, Any]:
             {"id": "sfx", "kind": "sfx", "name": "音效", "clips": []},
             {"id": "captions", "kind": "captions", "name": "字幕", "clips": []},
         ],
-        metadata={"project_id": project.get("id"), "source": "v3-default"},
+        metadata={"project_id": project.get("id"), "source": "v4-default"},
     )
     return document.model_dump(mode="json")
 
 
-def validate_timeline(document: TimelineDocumentV3) -> None:
+def validate_timeline(document: TimelineDocumentV4) -> None:
     """Validate timeline structure before it becomes a new immutable revision."""
     track_ids = [track.id for track in document.tracks]
     if len(track_ids) != len(set(track_ids)):
@@ -302,10 +302,10 @@ def ensure_timeline(database: Database, project_id: str) -> dict[str, Any]:
             )
             connection.execute(
                 "INSERT INTO timeline_events_v6(project_id,revision,event_type,detail_json,created_at) VALUES(?,?,?,?,?)",
-                (project_id, 1, "created", database.encode({"source": "v3-default"}), now),
+                (project_id, 1, "created", database.encode({"source": "v4-default"}), now),
             )
             return {"project_id": project_id, "revision": 1, "document": document, "updated_at": now}
-        document = TimelineDocumentV3.model_validate(database.decode(row["document_json"], {}))
+        document = TimelineDocumentV4.model_validate(database.decode(row["document_json"], {}))
         validate_timeline(document)
         required_tracks = [
             ("video-main", "video", "主视频"),
@@ -322,12 +322,12 @@ def ensure_timeline(database: Database, project_id: str) -> dict[str, Any]:
         ordered_tracks = [track_by_id.get(track_id, {"id": track_id, "kind": kind, "name": name, "clips": []}) for track_id, kind, name in required_tracks]
         ordered_tracks.extend(track for track_id, track in track_by_id.items() if track_id not in required_ids)
         if ordered_tracks != document_data.get("tracks", []):
-            document = TimelineDocumentV3.model_validate({**document_data, "tracks": ordered_tracks})
+            document = TimelineDocumentV4.model_validate({**document_data, "tracks": ordered_tracks})
             connection.execute("UPDATE timelines_v3 SET document_json=? WHERE project_id=?", (database.encode(document.model_dump(mode="json")), project_id))
         return {"project_id": project_id, "revision": row["revision"], "document": document.model_dump(mode="json"), "updated_at": row["updated_at"]}
 
 
-def save_timeline(database: Database, project_id: str, document: TimelineDocumentV3, expected_revision: int) -> dict[str, Any]:
+def save_timeline(database: Database, project_id: str, document: TimelineDocumentV4, expected_revision: int) -> dict[str, Any]:
     validate_timeline(document)
     now = utcnow()
     data = document.model_dump(mode="json")
@@ -486,12 +486,12 @@ def assemble_approved_timeline(
         if not project_row:
             raise HTTPException(404, "项目不存在。")
     project = database.decode(project_row["document_json"], {})
-    document = TimelineDocumentV3.model_validate(current["document"])
+    document = TimelineDocumentV4.model_validate(current["document"])
     tracks = [track.model_copy(deep=True) for track in document.tracks]
     video_track = next((track for track in tracks if track.kind == "video"), None)
     if video_track is None:
-        from .schemas import TimelineTrackV3
-        video_track = TimelineTrackV3(id="video-main", kind="video", name="主视频")
+        from .schemas import TimelineTrackV4
+        video_track = TimelineTrackV4(id="video-main", kind="video", name="主视频")
         tracks.insert(0, video_track)
     existing_ids = {clip.artifact_id for clip in video_track.clips if clip.artifact_id}
     if replace_existing:
@@ -543,7 +543,7 @@ def assemble_approved_timeline(
             for item in shot.get("assetRequirements") or []
             if isinstance(item, dict) and (item.get("assetId") or item.get("asset_id"))
         ]
-        video_track.clips.append(TimelineClipV3(
+        video_track.clips.append(TimelineClipV4(
             id=clip_id,
             artifact_id=artifact_id,
             start=round(cursor, 6),
@@ -592,7 +592,7 @@ def assemble_approved_timeline(
             track_map = {track.kind: track for track in tracks}
             for kind, label in (("dialogue", "对白 / 旁白"), ("music", "背景音乐"), ("ambience", "氛围"), ("sfx", "音效")):
                 if kind not in track_map:
-                    track_map[kind] = TimelineTrackV3(id=f"{kind}-main", kind=kind, name=label)
+                    track_map[kind] = TimelineTrackV4(id=f"{kind}-main", kind=kind, name=label)
                     tracks.append(track_map[kind])
             existing_audio_ids = {clip.artifact_id for track in tracks for clip in track.clips if clip.artifact_id}
             for logical_asset_id in approved_audio_ids:
@@ -617,7 +617,7 @@ def assemble_approved_timeline(
                 start = _audio_start_for_item(item, video_track)
                 duration = _audio_duration(item, metadata, track_kind, start, document.duration)
                 document.duration = max(document.duration, start + duration)
-                track_map[track_kind].clips.append(TimelineClipV3(
+                track_map[track_kind].clips.append(TimelineClipV4(
                     id=f"audio:{row['id']}",
                     artifact_id=str(row["id"]),
                     start=round(start, 6),
@@ -642,7 +642,7 @@ def assemble_approved_timeline(
                 added_audio_count += 1
     document.tracks = tracks
     added_count = added_video_count + added_audio_count
-    data = TimelineDocumentV3.model_validate(document.model_dump(mode="json"))
+    data = TimelineDocumentV4.model_validate(document.model_dump(mode="json"))
     result = save_timeline(database, project_id, data, expected_revision)
     with database.connect() as connection:
         connection.execute(

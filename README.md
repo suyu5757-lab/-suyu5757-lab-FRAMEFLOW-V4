@@ -1,6 +1,8 @@
-# FRAMEFLOW V3
+# FRAMEFLOW V4
 
-FRAMEFLOW V3 是一个本地优先的 AI 视频制作工作台，把脚本、分镜、角色/场景/道具资产、融合、镜头、声音、质量检查和交付编排在一条可追溯的生产流程中。
+FRAMEFLOW V4 是一个本地优先的 AI 视频制作工作台，把脚本、分镜、角色/场景/道具资产、融合、镜头、声音、质量检查和交付编排在一条可追溯的生产流程中。
+
+当前正式版本为 `4.0.0`。V4 在保留原有八阶段工作流、API 入口和资产 Prompt 状态流的基础上，启用版本化的剧本/分镜规则、自动审查和下游交接校验。
 
 ## 架构
 
@@ -72,13 +74,13 @@ Pop-Location
 macOS 示例：
 
 ```env
-FRAMEFLOW_RESOURCE_DIR="/Users/yusu/Desktop/framflow v3 resource"
+FRAMEFLOW_RESOURCE_DIR="/path/to/frameflow-v4-resource"
 ```
 
 配置后，资源目录结构大致为：
 
 ```text
-/Users/yusu/Desktop/framflow v3 resource/
+/path/to/frameflow-v4-resource/
 ├── data/
 │   ├── frameflow.db
 │   ├── projects/

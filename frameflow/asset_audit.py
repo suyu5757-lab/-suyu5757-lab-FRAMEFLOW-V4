@@ -498,7 +498,7 @@ def _default_project_root(project_id: str, database_path: Path | None = None) ->
     # Production media lives under the directory that contains the configured
     # database when that database is in a ``data`` folder.  This matters for a
     # user-selected external resource directory such as
-    # ``/Users/yusu/Desktop/framflow v3 resource``; treating every non-repo DB
+    # ``/path/to/frameflow-v4-resource``; treating every non-repo DB
     # as a test DB would make valid external media lose its browser URL. Test
     # and isolated runtime databases keep the deterministic temp root used by
     # server.lifespan.

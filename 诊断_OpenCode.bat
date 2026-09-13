@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ============================================
-echo  FRAMEFLOW V3 - OpenCode 连接诊断
+echo  FRAMEFLOW V4 - OpenCode 连接诊断
 echo  目标: http://127.0.0.1:4096
 echo ============================================
 echo.

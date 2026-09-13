@@ -26,7 +26,7 @@ def _project(project_id: str) -> dict:
         "name": "Agent 工作台测试",
         "ratio": "16:9",
         "duration": 8,
-        "generator": "V3 local",
+        "generator": "V4 local",
         "brief": "测试项目",
         "stage": 0,
         "sortOrder": 0,

@@ -36,6 +36,7 @@ web/artifacts/
 data/
 generated/
 backups/
+docs/prompt-generation-backups/
 *.db
 *.db-wal
 *.db-shm

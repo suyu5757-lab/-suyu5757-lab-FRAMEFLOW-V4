@@ -1,4 +1,4 @@
-# FRAMEFLOW V3 创作助手 Agent 工作台逐项验收记录
+# FRAMEFLOW V4 创作助手 Agent 工作台逐项验收记录
 
 日期：2026-09-09
 测试范围：桌面端创作助手 Agent 工作台 V2、附件管线、统一规范、运行事件、外发确认、跨工作区候选应用，以及现有工作台回归。
@@ -39,7 +39,7 @@
 | A17 | 中止运行 | 等待外发确认时可中止；Provider 请求运行中可中止；不生成计划、不丢消息和附件 | PASS |
 | A18 | Provider 失败 | 运行标记 failed，错误可见；用户消息、附件和历史记录保留 | PASS |
 | A19 | Prompt 候选规范 | 使用现有 normalize/canonicalize/assess 链；自动补齐 Prompt Contract 字段；QA 保持 Pending | PASS |
-| A20 | Story/Storyboard 候选规范 | 复用 `StoryDocumentUpdateV3`、`_validate_storyboard_output()`、`story_checks()`；重复镜头 ID 等错误被拒绝 | PASS |
+| A20 | Story/Storyboard 候选规范 | 复用 `StoryDocumentUpdateV4`、`_validate_storyboard_output()`、`story_checks()`；重复镜头 ID 等错误被拒绝 | PASS |
 | A21 | Audio 候选规范 | 使用当前 MiniMax Speech Web 字段，逐镜头拆分，保留 providerText/sourceText 分离，不能伪造已确认 | PASS |
 | A22 | 禁止伪造状态 | Provider 返回 Approved/registered/generated 等伪造字段时，运行失败，不生成可应用计划 | PASS |
 | A23 | 计划审阅 | 结构化候选、来源附件、文本/JSON 差异、逐项选择、全选安全项、清空、拒绝 | PASS |
@@ -101,9 +101,9 @@ PATH="$PWD/.venv/bin:$PATH" npm --prefix web run test:e2e
 - `frontend_ready=true`
 - `schema_version=18`
 - `project_storage_error=null`
-- `resource_dir=/Users/yusu/Desktop/framflow v3 resource`
-- `data_dir=/Users/yusu/Desktop/framflow v3 resource/data`
-- `database=/Users/yusu/Desktop/framflow v3 resource/data/frameflow.db`
+- `resource_dir=/path/to/frameflow-v4-resource`
+- `data_dir=/path/to/frameflow-v4-resource/data`
+- `database=/path/to/frameflow-v4-resource/data/frameflow.db`
 - `keyring_available=true`
 
 `/api/v2/settings` 返回 `feature_flags.assistant_workspace_v2=true`；当前 orchestrator 绑定为本机 OpenCode 且健康，MiniMax TTS 当前就绪，其他媒体能力仍按独立状态显示未就绪；最终 `/api/health` 为 `ready`（`ok=true`、`ready=true`），未就绪媒体能力不会被助手伪造为已分析或已生成。本轮没有使用真实用户资源执行 Provider 生成，也没有把用户文件外发，Provider 付费/外部调用路径由隔离测试和桌面 mock E2E 覆盖。

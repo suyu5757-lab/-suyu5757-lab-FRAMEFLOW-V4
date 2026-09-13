@@ -130,7 +130,7 @@ def render_timeline(
     output: Path,
     subtitle_path: Path | None = None,
 ) -> None:
-    """Render the editable V3 timeline with a deterministic FFmpeg graph.
+    """Render the editable V4 timeline with a deterministic FFmpeg graph.
 
     The renderer deliberately accepts resolved artifact paths rather than user
     supplied filesystem paths. Timeline clips are positioned on a black base,

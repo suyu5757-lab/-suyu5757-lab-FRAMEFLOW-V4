@@ -49,7 +49,7 @@ def board_project() -> dict:
     }
 
 
-class AssetBoardV3Tests(unittest.TestCase):
+class AssetBoardV4Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-asset-board-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
@@ -682,7 +682,7 @@ class AssetBoardV3Tests(unittest.TestCase):
         self.assertEqual(handoff["config"]["artifact_id"], artifact_id)
         self.assertTrue(handoff["config"]["artifact_url"].endswith("candidate.png"))
 
-    def test_v3_qa_and_registration_keep_active_version_gated(self) -> None:
+    def test_v4_qa_and_registration_keep_active_version_gated(self) -> None:
         intake = self.client.post(
             "/api/v2/projects/PRJ_BOARD/asset-intake",
             data={"logical_asset_id": "CHAR_01", "asset_class": "character", "source_type": "chatgpt-web", "prompt_version": "PROMPT_CHAR_01_002"},

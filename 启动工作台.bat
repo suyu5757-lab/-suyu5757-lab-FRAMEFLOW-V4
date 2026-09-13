@@ -2,11 +2,11 @@
 setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
-set "TASK_NAME=FRAMEFLOW-V3-Service"
+set "TASK_NAME=FRAMEFLOW-V4-Service"
 set "FORMAL_ROOT=%~dp0"
 set "FORMAL_DATABASE=%FORMAL_ROOT%data\frameflow.db"
 
-echo FRAMEFLOW V3 formal launcher
+echo FRAMEFLOW V4 formal launcher
 echo Official entrypoint: %TASK_NAME%
 echo.
 

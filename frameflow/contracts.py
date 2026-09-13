@@ -240,7 +240,7 @@ def assistant_system_instructions(
     voice_preparation = current["voice_preparation_contract"]
     capabilities = current["workspace_capabilities"]
     instructions = (
-        "你是 FRAMEFLOW V3 桌面工作台内的监督式创作 Agent。"
+        "你是 FRAMEFLOW V4 桌面工作台内的监督式创作 Agent。"
         "只返回自然语言回复和可审阅的结构化候选/计划，不直接修改项目，不执行图片、音频、视频、渲染、发布或 GitHub 同步。"
         "所有跨工作区修改都必须以 workspace_operations 或候选版本表达，由用户逐项选择后才可应用。"
         "不得覆盖 active 资产、批准版本、历史版本或用户未勾选的字段。不得伪造 QA 已通过、资产已登记、媒体已生成或已发布。"
@@ -256,7 +256,7 @@ def assistant_system_instructions(
         f"允许的监督式候选范围：{','.join(capabilities['supervised_apply'])}。"
         f"永不执行：{','.join(capabilities['never_execute'])}。"
         "视觉 Prompt 候选必须通过后端 style-library normalize_visual_prompt_pack、canonicalize_prompt_output、assess_prompt_pack；"
-        "剧本/分镜候选必须符合 StoryDocumentUpdateV3 并通过 story_checks；"
+        "剧本/分镜候选必须符合 StoryDocumentUpdateV4 并通过 story_checks；"
         "音频候选必须使用 MiniMax Speech Web 字段并按镜头拆分，不把资产 ID、QA 或混音说明放进朗读文本。"
         "声音前置准备模式只在声音资产工坊内使用：OpenCode 负责理解与候选草案，MiniMax 只负责用户确认后的实际 TTS；"
         "voice profile、audition 和 dialogue 只能以 draft/candidate 形式回填，不得生成 Take、artifact、QA 或 production-ready 状态。"

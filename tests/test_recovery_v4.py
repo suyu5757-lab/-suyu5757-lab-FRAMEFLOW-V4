@@ -24,7 +24,7 @@ def recovery_project() -> dict:
     }
 
 
-class RecoveryV3Tests(unittest.TestCase):
+class RecoveryV4Tests(unittest.TestCase):
     def setUp(self) -> None:
         self.db_path = Path(__file__).parent / f"test-recovery-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)

@@ -14,10 +14,10 @@ import server
 def matrix_project(project_id: str = "PRJ_MATRIX") -> dict:
     return {
         "id": project_id,
-        "name": "V3 功能矩阵测试",
+        "name": "V4 功能矩阵测试",
         "ratio": "16:9",
         "duration": 12,
-        "generator": "V3 local",
+        "generator": "V4 local",
         "brief": "全量路由矩阵",
         "stage": 0,
         "sortOrder": 0,
@@ -57,9 +57,9 @@ def matrix_project(project_id: str = "PRJ_MATRIX") -> dict:
     }
 
 
-class FrameflowV3FunctionMatrixTests(unittest.TestCase):
+class FrameflowV4FunctionMatrixTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.db_path = Path(__file__).parent / f"test-v3-matrix-{uuid.uuid4().hex}.db"
+        self.db_path = Path(__file__).parent / f"test-v4-matrix-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
         self.db_patch.start()
         self.secret_patch = mock.patch.object(server, "get_secret", return_value=None)
@@ -112,7 +112,7 @@ class FrameflowV3FunctionMatrixTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/project-files/PRJ_MATRIX/artifacts/source.mp4").status_code, 200)
         self.assertEqual(self.client.get("/api/project-files/PRJ_MATRIX/../source.mp4").status_code, 404)
         self.assertEqual(self.client.get("/generated/does-not-exist.bin").status_code, 404)
-        self.assertEqual(self.client.get("/not-a-v3-page").status_code, 404)
+        self.assertEqual(self.client.get("/not-a-v4-page").status_code, 404)
         self.assertEqual(self.client.get("/api/v2/projects/DOES_NOT_EXIST").status_code, 404)
         self.assertEqual(self.client.get("/api/v2/providers/DOES_NOT_EXIST/contract").status_code, 404)
 

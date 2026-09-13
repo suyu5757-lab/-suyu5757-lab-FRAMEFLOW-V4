@@ -16,10 +16,10 @@ import server
 def delivery_project(project_id: str = "PRJ_DELIVERY") -> dict:
     return {
         "id": project_id,
-        "name": "V3 交付测试",
+        "name": "V4 交付测试",
         "ratio": "16:9",
         "duration": 12,
-        "generator": "V3 local",
+        "generator": "V4 local",
         "brief": "多轨时间线测试",
         "stage": 0,
         "sortOrder": 0,
@@ -50,9 +50,9 @@ def delivery_project(project_id: str = "PRJ_DELIVERY") -> dict:
     }
 
 
-class FrameflowV3DeliveryTests(unittest.TestCase):
+class FrameflowV4DeliveryTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.db_path = Path(__file__).parent / f"test-v3-delivery-{uuid.uuid4().hex}.db"
+        self.db_path = Path(__file__).parent / f"test-v4-delivery-{uuid.uuid4().hex}.db"
         self.db_patch = mock.patch.object(server, "DB_PATH", self.db_path)
         self.db_patch.start()
         self.secret_patch = mock.patch.object(server, "get_secret", return_value=None)
@@ -76,7 +76,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
     def _video_artifact(self, artifact_id: str = "ART_VIDEO") -> Path:
         path = server.DATA_DIR / "projects" / "PRJ_DELIVERY" / "artifacts" / f"{artifact_id}.mp4"
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(b"v3-test-video")
+        path.write_bytes(b"v4-test-video")
         self.video_path = path
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         with server.app.state.db.connect() as connection:
@@ -114,7 +114,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
         gate = payload.get("details", {}).get("production_gate", {})
         self.assertEqual(gate.get("code"), expected_code, payload)
 
-    def test_v3_is_root_surface_and_legacy_api_is_retired(self) -> None:
+    def test_v4_is_root_surface_and_legacy_api_is_retired(self) -> None:
         self.assertEqual(self.client.get("/").status_code, 200)
         self.assertEqual(self.client.get("/studio/").status_code, 404)
         self.assertEqual(self.client.get("/api/v2/projects").status_code, 200)
@@ -192,7 +192,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
 
         with mock.patch.object(server, "render_timeline", side_effect=fake_render), mock.patch.object(server, "find_binary", return_value="ffmpeg"):
             self.assertEqual(self.client.post(f"/api/v2/renders/{created['id']}/approve", json={"detail": {"test": True}}).status_code, 200)
-            asyncio.run(server.run_v3_render_task(server.app, created["id"]))
+            asyncio.run(server.run_v4_render_task(server.app, created["id"]))
         detail = self.client.get(f"/api/v2/renders/{created['id']}").json()
         self.assertEqual(detail["status"], "succeeded", detail)
         self.assertTrue(detail["result"]["delivery"]["video_url"].startswith("/api/project-files/PRJ_DELIVERY/"))
@@ -233,7 +233,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
         with mock.patch.object(server, "render_timeline", side_effect=fake_render), mock.patch.object(server, "find_binary", return_value="ffmpeg"):
             queued = self.client.post(f"/api/v2/projects/PRJ_DELIVERY/timeline/preview", json={"expected_revision": assembled["revision"], "resolution": "960x540", "use_proxies": False})
             self.assertEqual(queued.status_code, 200, queued.text)
-            asyncio.run(server.run_v3_render_task(server.app, queued.json()["id"]))
+            asyncio.run(server.run_v4_render_task(server.app, queued.json()["id"]))
         detail = self.client.get(f"/api/v2/renders/{queued.json()['id']}").json()
         self.assertEqual(detail["status"], "succeeded", detail)
         self.assertTrue(detail["result"]["preview_url"].endswith("/preview.mp4"))
@@ -330,7 +330,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
             connection.execute("UPDATE render_jobs_v6 SET status='queued' WHERE id=?", (created["id"],))
             connection.execute("UPDATE artifacts SET qa_decision='Pending',status='generated_pending_qa' WHERE id='ART_VIDEO'")
         with mock.patch.object(server, "render_timeline") as render_mock:
-            asyncio.run(server.run_v3_render_task(server.app, created["id"]))
+            asyncio.run(server.run_v4_render_task(server.app, created["id"]))
         self.assertEqual(render_mock.call_count, 0)
         detail = self.client.get(f"/api/v2/renders/{created['id']}").json()
         self.assertEqual(detail["status"], "failed", detail)
@@ -352,7 +352,7 @@ class FrameflowV3DeliveryTests(unittest.TestCase):
                 connection.execute("UPDATE asset_versions SET is_active=0,status='superseded' WHERE id='AV_ASSET_VIDEO_001'")
 
         with mock.patch.object(server, "render_timeline", side_effect=mutate_after_render), mock.patch.object(server, "find_binary", return_value="ffmpeg"):
-            asyncio.run(server.run_v3_render_task(server.app, created["id"]))
+            asyncio.run(server.run_v4_render_task(server.app, created["id"]))
         detail = self.client.get(f"/api/v2/renders/{created['id']}").json()
         self.assertEqual(detail["status"], "failed", detail)
         with server.app.state.db.connect() as connection:

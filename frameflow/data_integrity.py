@@ -30,7 +30,7 @@ def _sha256(path: Path) -> str:
 
 
 def scan_data_integrity(database: Any, data_dir: Path, project_id: str | None = None) -> dict[str, Any]:
-    """Read-only DB/media authority audit shared by all V3 integrity endpoints."""
+    """Read-only DB/media authority audit shared by all V4 integrity endpoints."""
     projects_root = (Path(data_dir) / "projects").resolve()
     with database.connect() as connection:
         tables = {str(row[0]) for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
