@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from frameflow.opencode_client import _structured_result, normalize_opencode_providers, opencode_structured, probe_opencode, split_model_ref
+from frameflow.providers import ProviderError
+
+
+class OpenCodeClientTests(unittest.IsolatedAsyncioTestCase):
+    def setUp(self) -> None:
+        self.profile = {
+            "base_url": "http://127.0.0.1:4096", "provider_type": "opencode",
+            "model_config": {"server_username": "opencode", "agent": "build"},
+        }
+
+    def test_normalize_provider_catalog_preserves_two_level_identity(self) -> None:
+        catalog, connected = normalize_opencode_providers({
+            "connected": ["anthropic"],
+            "all": [
+                {"id": "openrouter", "name": "OpenRouter", "models": {"anthropic/claude-3.7": {"name": "Claude 3.7"}}},
+                {"id": "anthropic", "name": "Anthropic", "models": {"claude-sonnet-4-5": {"name": "Claude Sonnet 4.5"}}},
+            ],
+        })
+        self.assertEqual(connected, ["anthropic"])
+        self.assertEqual(catalog[0]["id"], "anthropic/claude-sonnet-4-5")
+        self.assertTrue(catalog[0]["connected"])
+        self.assertNotIn("openrouter/anthropic/claude-3.7", {item["id"] for item in catalog})
+        self.assertEqual(split_model_ref("openrouter/anthropic/claude-3.7"), ("openrouter", "anthropic/claude-3.7"))
+
+    async def test_probe_reads_health_and_provider_catalog(self) -> None:
+        async def fake_request(profile, method, path, password="", **kwargs):
+            if path == "/global/health":
+                return {"healthy": True, "version": "1.2.3"}
+            return {"connected": ["opencode-go"], "all": [{"id": "opencode-go", "name": "OpenCode Go Plan", "models": {"gpt-5.1-codex": {"name": "GPT 5.1 Codex"}}}]}
+        with mock.patch("frameflow.opencode_client.opencode_request_json", new=fake_request):
+            result = await probe_opencode(self.profile)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["models"], ["opencode-go/gpt-5.1-codex"])
+        self.assertEqual(result["server_version"], "1.2.3")
+
+    async def test_structured_prompt_passes_provider_and_model_separately(self) -> None:
+        calls = []
+        self.profile["model_config"]["thinking_strength"] = "max"
+        self.profile["model_config"]["directory"] = "/tmp/frameflow-opencode-test"
+        async def fake_request(profile, method, path, password="", **kwargs):
+            calls.append((method, path, kwargs.get("json"), kwargs.get("params")))
+            if path == "/session":
+                return {"id": "SES_TEST"}
+            return {"info": {"id": "MSG_TEST", "structured_output": {"reply": "ok"}}, "parts": []}
+        with mock.patch("frameflow.opencode_client.opencode_request_json", new=fake_request):
+            result = await opencode_structured(self.profile, "", "openrouter/anthropic/claude-3.7", "system", "prompt", {"type": "object"})
+        session_body = calls[0][2]
+        message_body = calls[1][2]
+        self.assertEqual(session_body["model"], {"id": "anthropic/claude-3.7", "providerID": "openrouter", "variant": "max"})
+        self.assertEqual(session_body["agent"], "build")
+        self.assertNotIn("model", message_body)
+        self.assertNotIn("agent", message_body)
+        self.assertNotIn("format", message_body)
+        self.assertIn('"type":"object"', message_body["system"])
+        expected_directory = str(Path("/tmp/frameflow-opencode-test").resolve())
+        self.assertEqual(calls[0][3], {"directory": expected_directory})
+        self.assertEqual(calls[1][3], {"directory": expected_directory})
+        self.assertEqual(result["opencode_session_id"], "SES_TEST")
+
+    async def test_structured_prompt_aborts_session_after_message_timeout(self) -> None:
+        calls = []
+
+        async def fake_request(profile, method, path, password="", **kwargs):
+            calls.append((method, path, kwargs))
+            if path == "/session":
+                return {"id": "SES_TIMEOUT"}
+            if path.endswith("/message"):
+                raise ProviderError("OpenCode Server 响应超时。", "timeout", 504)
+            return None
+
+        with mock.patch("frameflow.opencode_client.opencode_request_json", new=fake_request):
+            with self.assertRaisesRegex(ProviderError, "JSON 文本消息失败"):
+                await opencode_structured(self.profile, "", "opencode-go/gpt-5.6-luna", "system", "prompt", {"type": "object"})
+        self.assertEqual([call[1] for call in calls], ["/session", "/session/SES_TIMEOUT/message", "/session/SES_TIMEOUT/abort"])
+
+    def test_structured_result_accepts_server_field_name(self) -> None:
+        self.assertEqual(
+            _structured_result({"info": {"structured": {"reply": "ok"}}, "parts": []}),
+            {"reply": "ok"},
+        )
+
+    def test_structured_result_classifies_upstream_usage_limit(self) -> None:
+        with self.assertRaises(ProviderError) as context:
+            _structured_result({"info": {"error": "Monthly usage limit reached. Resets in 3 days."}, "parts": []})
+        self.assertEqual(context.exception.kind, "billing")
+        self.assertEqual(context.exception.status_code, 402)
+
+    def test_structured_result_classifies_upstream_rate_limit(self) -> None:
+        with self.assertRaises(ProviderError) as context:
+            _structured_result({"info": {"error": "Rate limit exceeded. Please try again later."}, "parts": []})
+        self.assertEqual(context.exception.kind, "rate_limit")
+        self.assertEqual(context.exception.status_code, 429)
+
+
+if __name__ == "__main__":
+    unittest.main()

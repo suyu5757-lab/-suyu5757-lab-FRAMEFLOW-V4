@@ -1,0 +1,1195 @@
+export type ProjectRecord = {
+  document: {
+    id: string;
+    name: string;
+    brief?: string;
+    ratio?: string;
+    duration?: number;
+    generator?: string;
+    sortOrder?: number;
+    createdAt?: string | null;
+    productionStatus?: 'in_progress' | 'completed';
+    lifecycleStatus?: 'active' | 'archived';
+    assets?: Array<Record<string, unknown>>;
+    shots?: Array<Record<string, unknown>>;
+    audio?: AudioStudioDocument;
+  };
+  revision: number;
+  updated_at: string;
+  lifecycle_status?: 'active' | 'archived';
+};
+
+export type MiniMaxRegion = 'cn' | 'global';
+
+export type MiniMaxVoiceOption = {
+  voice_id: string;
+  name: string;
+  source: 'system' | 'cloning' | 'generation' | string;
+  language?: string | null;
+  languages?: string[];
+  description?: string | null;
+  gender?: string | null;
+  age?: string | null;
+  supported_emotion?: string[];
+  catalog_source?: 'live' | 'cached' | 'documented' | string;
+};
+
+export type MiniMaxVoiceCatalog = {
+  provider_id: string | null;
+  provider: 'minimax' | string;
+  region: MiniMaxRegion | string;
+  status: 'live' | 'cached' | 'unavailable' | string;
+  catalog_source?: 'live' | 'cached' | 'documented' | 'none' | string;
+  checked_at?: string | number | null;
+  voices: MiniMaxVoiceOption[];
+  models?: string[];
+  error?: string | null;
+  error_kind?: string | null;
+};
+
+export type AudioTtsRoute = {
+  id: string;
+  provider_profile_id: string;
+  provider: 'minimax' | string;
+  display_name: string;
+  region: MiniMaxRegion | string;
+  base_url: string;
+  model: string;
+  enabled: boolean;
+  credential_configured: boolean;
+  ready: boolean;
+  active?: boolean;
+  catalog: MiniMaxVoiceCatalog;
+};
+
+export type AudioVoiceProfile = {
+  id: string;
+  name: string;
+  character_id?: string | null;
+  role?: 'character' | 'narrator' | string;
+  source_type: 'preset' | 'clone' | 'design' | string;
+  provider?: string;
+  model?: string;
+  provider_profile_id?: string | null;
+  provider_voice_id?: string;
+  provider_voice_name?: string;
+  provider_voice_source?: string;
+  provider_region?: MiniMaxRegion | string;
+  locale?: string;
+  language?: string;
+  dialect?: string;
+  language_boost?: string | null;
+  catalog_snapshot?: Record<string, unknown>;
+  traits?: string[];
+  pronunciation_risks?: string[] | string;
+  register?: string;
+  age_range?: string;
+  pitch_energy?: string;
+  breath_noise_profile?: string;
+  consent_status: 'not-required' | 'pending-consent' | 'consent-supplied' | 'consent-verified' | 'restricted' | string;
+  consent_evidence_ref?: string;
+  allowed_use?: string;
+  geography?: string;
+  term?: string;
+  provider_eligibility?: string;
+  logical_asset_id?: string | null;
+  selected_audition_id?: string | null;
+  continuity_anchor?: Record<string, string>;
+  status: 'draft' | 'audition' | 'approved' | 'blocked' | string;
+  notes?: string;
+};
+
+export type AudioVoiceDesignCandidate = {
+  id: string;
+  status: 'candidate' | 'adopted' | 'expired' | string;
+  provider: 'minimax' | string;
+  provider_profile_id?: string | null;
+  provider_region?: MiniMaxRegion | string;
+  provider_voice_id: string;
+  provider_voice_name?: string;
+  source_type: 'design' | string;
+  prompt: string;
+  preview_text: string;
+  locale?: string | null;
+  language?: string | null;
+  character_id?: string | null;
+  artifact_id?: string | null;
+  url?: string | null;
+  created_at?: string | null;
+  expires_at?: string | null;
+  retention_notice?: string | null;
+};
+
+export type AudioVoiceReference = {
+  id: string;
+  voice_id?: string | null;
+  artifact_id?: string | null;
+  source_type?: string;
+  consent_status?: string;
+  evidence_ref?: string;
+  allowed_use?: string;
+  geography?: string;
+  term?: string;
+  notes?: string;
+};
+
+export type AudioAudition = {
+  id: string;
+  voice_id?: string | null;
+  character_id?: string | null;
+  condition: 'neutral' | 'emotional' | 'pronunciation-stress' | string;
+  text: string;
+  source_text?: string;
+  provider_text?: string;
+  text_status?: 'missing' | 'candidate' | 'conflict' | 'confirmed' | string;
+  locale?: string | null;
+  language?: string | null;
+  dialect?: string | null;
+  language_boost?: string | null;
+  provider_region?: MiniMaxRegion | string;
+  variant?: string;
+  settings?: Record<string, unknown>;
+  emotion?: string | null;
+  instructions?: string;
+  target_duration?: number | null;
+  text_confirmation?: { status: string; confirmed_by?: string; confirmed_at?: string; text_sha256?: string } | null;
+  artifact_id?: string | null;
+  qa_run_id?: string | null;
+  provider_profile_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  status: string;
+  notes?: string;
+};
+
+export type AudioDialogueTask = {
+  id: string;
+  asset_id?: string | null;
+  character_id?: string | null;
+  voice_id?: string | null;
+  logical_asset_id?: string | null;
+  shot_ids: string[];
+  text: string;
+  source_text?: string;
+  provider_text?: string;
+  text_status?: 'missing' | 'candidate' | 'conflict' | 'confirmed' | string;
+  locale?: string | null;
+  language?: string | null;
+  dialect?: string | null;
+  language_boost?: string | null;
+  provider_region?: MiniMaxRegion | string;
+  settings?: Record<string, unknown>;
+  emotion?: string;
+  target_duration?: number | null;
+  text_confirmation?: { status: string; confirmed_by?: string; confirmed_at?: string; text_sha256?: string } | null;
+  artifact_id?: string | null;
+  qa_run_id?: string | null;
+  operation: 'tts' | 'voice-clone' | 'voice-design' | 'speech-to-speech' | 'take-regeneration' | string;
+  execution_status: string;
+  selected_take_id?: string | null;
+  provider_profile_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  notes?: string;
+};
+
+export type AudioTake = {
+  id: string;
+  dialogue_id?: string | null;
+  voice_id?: string | null;
+  version: number;
+  artifact_id?: string | null;
+  logical_asset_id?: string | null;
+  qa_run_id?: string | null;
+  provider_profile_id?: string | null;
+  provider?: string | null;
+  model?: string | null;
+  locale?: string | null;
+  language?: string | null;
+  dialect?: string | null;
+  language_boost?: string | null;
+  provider_region?: MiniMaxRegion | string;
+  source_text?: string;
+  provider_text?: string;
+  text_status?: 'missing' | 'candidate' | 'conflict' | 'confirmed' | string;
+  settings?: Record<string, unknown>;
+  trace_id?: string | null;
+  extra_info?: Record<string, unknown>;
+  duration?: number | null;
+  format?: string | null;
+  sample_rate?: number | null;
+  channels?: number | string | null;
+  operation?: string;
+  status: string;
+  notes?: string;
+};
+
+export type AudioMusicCue = {
+  id: string;
+  asset_id?: string | null;
+  shot_ids: string[];
+  purpose: string;
+  entry?: string;
+  development?: string;
+  exit?: string;
+  duration?: number | null;
+  bpm?: number | null;
+  instrumentation?: string;
+  texture?: string;
+  dialogue_avoidance?: string[];
+  rights_status: string;
+  execution_status: string;
+  provider_hint?: string;
+  notes?: string;
+};
+
+export type AudioSoundDesignItem = {
+  id: string;
+  asset_id?: string | null;
+  shot_ids: string[];
+  kind: 'ambience' | 'sfx' | 'foley' | 'transition' | string;
+  description: string;
+  entry?: string;
+  exit?: string;
+  rights_status: string;
+  execution_status: string;
+  notes?: string;
+};
+
+export type AudioStudioDocument = {
+  version: number;
+  schema_version?: 'minimax-speech-audio-v2' | string;
+  schemaVersion?: 'minimax-speech-audio-v2' | string;
+  selected_mode?: 'overview' | 'voices' | 'music' | 'sound' | 'handoff' | string;
+  voices: AudioVoiceProfile[];
+  voice_design_candidates?: AudioVoiceDesignCandidate[];
+  voice_references?: AudioVoiceReference[];
+  auditions?: AudioAudition[];
+  dialogues: AudioDialogueTask[];
+  takes?: AudioTake[];
+  music_cues: AudioMusicCue[];
+  sound_design: AudioSoundDesignItem[];
+  handoff: { status: string; approved_asset_ids: string[]; notes?: string };
+  updated_at?: string;
+};
+
+export type AudioStudioEnvelope = {
+  project_id: string;
+  revision: number;
+  document: AudioStudioDocument;
+  assets: LibraryAsset[];
+  capabilities?: Record<string, { ready: boolean; status?: string; provider_profile_id?: string | null; provider?: string | null; model?: string | null; reason?: string | null }>;
+  audio_gates?: Record<string, { status: string; allowed: boolean; missing: string[]; next_action: string; [key: string]: unknown }>;
+  workflow?: { router?: string; voice?: string; music?: string; qa_owner?: string };
+  minimax_voice_catalog?: MiniMaxVoiceCatalog;
+  tts_routes?: AudioTtsRoute[];
+  default_tts_route_id?: string | null;
+};
+
+export type SpeechGenerateInput = {
+  text: string;
+  source_text?: string;
+  provider_text?: string;
+  text_status?: 'missing' | 'candidate' | 'conflict' | 'confirmed';
+  model?: string;
+  voice?: string;
+  format?: 'mp3' | 'wav' | 'flac';
+  instructions?: string;
+  speed?: number;
+  volume?: number;
+  pitch?: number;
+  language_boost?: string | null;
+  locale?: string | null;
+  language?: string | null;
+  dialect?: string | null;
+  provider_region?: MiniMaxRegion | string | null;
+  pronunciation_dict?: Record<string, unknown>;
+  sample_rate?: number;
+  bitrate?: number;
+  aigc_watermark?: boolean;
+  pause_plan?: Array<Record<string, unknown>>;
+  sound_tags?: Array<string | Record<string, unknown>>;
+  dialogue_id?: string;
+  logical_asset_id?: string | null;
+  shot_ids?: string[];
+  emotion?: string | null;
+  target_duration?: number | null;
+  confirmed: boolean;
+  provider_profile_id?: string;
+  voice_id?: string;
+  audition_id?: string;
+  take_id?: string;
+  character_id?: string;
+  operation?: string;
+};
+
+export type VoiceDesignGenerateInput = {
+  prompt: string;
+  preview_text: string;
+  provider_profile_id?: string;
+  provider_region?: MiniMaxRegion;
+  voice_id?: string;
+  name?: string;
+  locale?: string;
+  language?: string;
+  character_id?: string;
+  expected_revision: number;
+  confirmed: boolean;
+};
+
+export type ProjectCreateInput = {
+  name: string;
+  brief: string;
+  ratio: string;
+  duration: number;
+  generator: string;
+};
+
+export type HomeStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'awaiting_confirmation'
+  | 'awaiting_review'
+  | 'ready'
+  | 'completed'
+  | 'blocked'
+  | 'failed'
+  | 'skipped';
+
+export type DashboardTask = {
+  id: string;
+  category: 'content' | 'process' | 'asset' | 'execution' | 'delivery';
+  title: string;
+  reason: string;
+  priority: 'critical' | 'high' | 'normal';
+  status: HomeStatus;
+  route: 'story' | 'assets' | 'canvas' | 'timeline' | 'audio' | 'settings' | 'home';
+  targetId?: string;
+  action: string;
+  blockedBy?: string[];
+};
+
+export type ProjectProgress = {
+  completed: number;
+  total: number;
+  percent: number;
+};
+
+export type ProjectHomeSummary = {
+  project_id: string;
+  name: string;
+  ratio?: string;
+  duration?: number;
+  generator?: string;
+  status: HomeStatus;
+  progress: ProjectProgress;
+  current_stage_id: string | null;
+  current_stage_label: string | null;
+  blocker_count: number;
+  review_count: number;
+  next_task: DashboardTask | null;
+  updated_at?: string;
+};
+
+export type DashboardStage = {
+  id: string;
+  label: string;
+  order: number;
+  status: HomeStatus;
+  completed: number;
+  total: number;
+  reason: string;
+  route: string;
+  next_task_id?: string;
+};
+
+export type ProjectDashboard = {
+  project: ProjectHomeSummary;
+  stages: DashboardStage[];
+  primary_next_task: DashboardTask | null;
+  task_queue: DashboardTask[];
+  metrics: {
+    content: Record<string, number | string>;
+    assets: Record<string, number | string>;
+    execution: Record<string, number | string>;
+    delivery: Record<string, number | string>;
+  };
+  recent_activity: Array<{
+    id: string;
+    type: string;
+    label: string;
+    status: HomeStatus;
+    created_at: string;
+  }>;
+  source_revisions: {
+    project: number;
+    graph: number;
+    timeline: number;
+  };
+};
+
+export type DashboardEnvelope = {
+  generated_at: string;
+  projects: ProjectHomeSummary[];
+  selected_project: ProjectDashboard | null;
+};
+
+export type SettingsProvider = {
+  id: string;
+  provider_type: string;
+  providerType?: string;
+  display_name: string;
+  base_url: string;
+  model_config: Record<string, unknown>;
+  capabilities: string[];
+  enabled: boolean;
+  credential_configured: boolean;
+  credential?: { required: boolean; configured: boolean; source?: string | null; optional?: boolean };
+  credential_mask?: string | null;
+  active_region?: MiniMaxRegion | string | null;
+  credential_regions?: Partial<Record<MiniMaxRegion, {
+    configured: boolean;
+    credential_mask?: string | null;
+    label?: string;
+  }>>;
+  models: string[];
+  model_catalog?: Array<Record<string, unknown>>;
+  model_readiness?: Record<string, boolean>;
+  healthy?: boolean | null;
+  last_probe?: Record<string, unknown> | null;
+  contract?: {
+    adapter: string;
+    version: string;
+    capabilities: string[];
+    capability_specs: Record<string, Record<string, unknown>>;
+    input_limits: Record<string, Record<string, unknown>>;
+    output_types: Record<string, string[]>;
+    task_modes: Record<string, string>;
+  };
+};
+
+export type SettingsPreset = {
+  preset_id: string;
+  id: string;
+  provider_type: string;
+  display_name: string;
+  base_url: string;
+  model_config: Record<string, unknown>;
+  capabilities: string[];
+  enabled: boolean;
+  model_options?: Array<{ id: string; label: string; description?: string }>;
+};
+
+export type SettingsBinding = {
+  capability: string;
+  provider_profile_id: string;
+  model: string | null;
+  updated_at: string;
+  provider?: { id: string; name: string; type: string; enabled: boolean; models: string[] } | null;
+};
+
+export type SettingsEnvelope = {
+  settings_version: string;
+  system: {
+    runtime: string;
+    version: string;
+    schema_version: number;
+    database: { path: string; status: string };
+    keyring: { available: boolean; backend?: string | null };
+    media: { ffmpeg?: string | null; ffprobe?: string | null };
+    minimax?: {
+      profile_id?: string | null;
+      credential_configured: boolean;
+      active_region?: MiniMaxRegion | string | null;
+      credential_regions?: SettingsProvider['credential_regions'];
+    };
+    disk_free_bytes: number;
+    provider_count: number;
+  };
+  providers: SettingsProvider[];
+  presets: SettingsPreset[];
+  bindings: SettingsBinding[];
+  capabilities: string[];
+  feature_flags?: { assistant_workspace_v2?: boolean };
+  orchestrator_models: { default: string; models: Array<{ id: string; label: string; description: string }> };
+  routing_policy?: string;
+};
+
+export type GraphNodeData = {
+  label: string;
+  kind: string;
+  config: Record<string, unknown>;
+  status: string;
+  inputs: string[];
+  outputs: string[];
+  version: number;
+  locked: boolean;
+};
+
+export type GraphNode = {
+  id: string;
+  kind: string;
+  label: string;
+  position: { x: number; y: number };
+  config: Record<string, unknown>;
+  inputs: string[];
+  outputs: string[];
+  status: string;
+  version: number;
+  locked: boolean;
+};
+
+export type GraphEdge = {
+  id: string;
+  source: string;
+  target: string;
+  source_port?: string | null;
+  target_port?: string | null;
+  relation: 'execution' | 'reference' | 'lineage' | 'annotation';
+};
+
+export type WorkflowGraph = {
+  version: number;
+  template_id?: string | null;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  viewport: Record<string, number>;
+  metadata: Record<string, unknown>;
+};
+
+export type GraphEnvelope = {
+  project_id: string;
+  revision: number;
+  graph: WorkflowGraph;
+  updated_at: string;
+};
+
+export type AssetBoardNodeType = 'asset' | 'shot' | 'group' | 'handoff' | 'artifact';
+export type AssetBoardEdgeRelation = 'shot_dependency' | 'reference' | 'fusion_input' | 'candidate';
+
+export type AssetBoardNode = {
+  id: string;
+  node_type: AssetBoardNodeType;
+  label: string;
+  position: { x: number; y: number };
+  asset_id?: string;
+  shot_id?: string;
+  config: Record<string, unknown>;
+  status: string;
+};
+
+export type AssetBoardEdge = {
+  id: string;
+  source: string;
+  target: string;
+  relation: AssetBoardEdgeRelation;
+};
+
+export type AssetBoard = {
+  version: number;
+  viewport: { x: number; y: number; zoom: number };
+  nodes: AssetBoardNode[];
+  edges: AssetBoardEdge[];
+  metadata: { story_revision?: number; asset_source_revision?: number; [key: string]: unknown };
+};
+
+export type AssetBoardEnvelope = {
+  project_id: string;
+  revision: number;
+  board: AssetBoard;
+  updated_at: string;
+};
+
+export type RunEstimate = {
+  node_count: number;
+  paid_node_count: number;
+  paid_nodes: Array<{
+    node_id: string;
+    kind: string;
+    estimated_cost: number;
+    currency?: string;
+    provider_profile_id?: string | null;
+    model?: string | null;
+    quantity?: number;
+    resolution?: string | { width?: number; height?: number } | null;
+    duration?: number | null;
+    seed?: number | string | null;
+    prompt_version?: string | null;
+    privacy?: string;
+  }>;
+  selected_node_ids?: string[];
+  impact_node_ids?: string[];
+  estimated_cost: number;
+  currency: string;
+  requires_confirmation: boolean;
+};
+
+export type WorkflowRun = {
+  id: string;
+  project_id: string;
+  graph_revision: number;
+  status: string;
+  estimate: RunEstimate;
+  created_at: string;
+  updated_at: string;
+};
+
+export type WorkflowRunDetail = WorkflowRun & {
+  request: Record<string, unknown>;
+  result: Record<string, unknown> | null;
+  error: Record<string, unknown> | null;
+  nodes: Array<{
+    node_id: string;
+    status: string;
+    attempt: number;
+    output: Record<string, unknown> | null;
+    error: Record<string, unknown> | null;
+  }>;
+  approval_gates: Array<{
+    id: string;
+    node_id: string | null;
+    reason: string;
+    status: string;
+    estimate: Record<string, unknown>;
+  }>;
+};
+
+export type AgentPlan = {
+  id: string;
+  project_id: string;
+  status: string;
+  message: string;
+  base_project_revision: number;
+  base_graph_revision: number;
+  input_snapshot: Record<string, any>;
+  patch: Record<string, any>;
+  preview: Record<string, any>;
+  reply?: string;
+  candidates?: Array<Record<string, any>>;
+  decision?: Record<string, any>;
+};
+
+export type WorkflowManifest = {
+  skill_id: string;
+  skill_version: string;
+  input_schema?: Record<string, unknown>;
+  output_schema?: Record<string, unknown>;
+  instructions?: string;
+  deterministic_gates?: string[];
+  next_routes?: string[];
+  approval_policy?: string;
+};
+
+export type TimelineClip = {
+  id: string;
+  artifact_id?: string | null;
+  source?: string | null;
+  start: number;
+  duration: number;
+  source_in: number;
+  speed: number;
+  volume: number;
+  fade_in: number;
+  fade_out: number;
+  transition?: string | null;
+  metadata: Record<string, unknown>;
+};
+
+export type TimelineTrack = {
+  id: string;
+  kind: 'video' | 'overlay' | 'dialogue' | 'music' | 'ambience' | 'sfx' | 'captions' | string;
+  name: string;
+  muted: boolean;
+  locked: boolean;
+  clips: TimelineClip[];
+};
+
+export type TimelineDocument = {
+  version: number;
+  fps: number;
+  width: number;
+  height: number;
+  duration: number;
+  tracks: TimelineTrack[];
+  metadata: Record<string, unknown>;
+};
+
+export type TimelineEnvelope = {
+  project_id: string;
+  revision: number;
+  document: TimelineDocument;
+  updated_at: string;
+};
+
+export type TimelinePreflightBlocker = {
+  code: string;
+  message: string;
+  source?: string | null;
+};
+
+export type TimelinePreflightShot = {
+  shot_id: string;
+  scene_id: string;
+  order: number;
+  duration: number;
+  status: string;
+  clip_ids: string[];
+  artifact_ids: string[];
+  thumbnail_url?: string | null;
+  purpose?: string;
+  camera?: string;
+  action?: string;
+  blockers: TimelinePreflightBlocker[];
+};
+
+export type TimelinePreflight = {
+  project_id: string;
+  timeline_revision: number;
+  summary: {
+    shot_total: number;
+    shot_placed: number;
+    shot_ready: number;
+    blocked_shots: number;
+    audio_ready: number;
+    caption_count: number;
+    delivery_ready: boolean;
+    error_count: number;
+    warning_count: number;
+  };
+  shots: TimelinePreflightShot[];
+  tracks: Array<{ id: string; kind: string; name: string; muted: boolean; locked: boolean; clip_count: number }>;
+  warnings: TimelinePreflightBlocker[];
+  deliverables: { master_burn_in: string; clean: string; srt: string };
+  asset_summary?: Record<string, any>;
+};
+
+export type RenderEstimate = {
+  estimated_cost: number;
+  currency: string;
+  estimated_seconds: number;
+  requires_confirmation: boolean;
+  input_count: number;
+  track_count: number;
+};
+
+export type RenderJob = {
+  id: string;
+  project_id: string;
+  timeline_revision: number;
+  status: string;
+  request: Record<string, unknown>;
+  manifest: Record<string, any>;
+  result: Record<string, any> | null;
+  error: Record<string, any> | null;
+  confirmed_at?: string | null;
+  started_at?: string | null;
+  finished_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type StorySpec = {
+  workflow_mode?: 'optimize_script_and_storyboard' | 'storyboard_from_source' | string;
+  creative_goal: string;
+  audience: string;
+  platform: string;
+  duration: number;
+  duration_source?: 'reference' | 'script_explicit' | 'storyboard_import' | string;
+  script_duration?: { source?: string; minimum?: number; maximum?: number; target?: number; raw?: string } | null;
+  reference_duration?: number | null;
+  ratio: string;
+  language: string;
+  brand_requirements: string[];
+  must_preserve: string[];
+  must_avoid: string[];
+  structure: Array<Record<string, unknown>>;
+  beats: Array<Record<string, unknown>>;
+  shot_count_min?: number | null;
+  shot_count_target?: number | null;
+  shot_count_max?: number | null;
+  shot_budget_mode?: 'controlled' | 'high_tempo' | string;
+  shot_budget_source?: 'automatic' | 'manual' | string;
+  generator_profile?: string;
+  rule_profile?: 'frameflow-director-v2' | 'legacy' | string;
+  rule_profile_version?: string | null;
+  rule_modules?: Record<string, string[]>;
+  rule_sources?: Array<Record<string, unknown>>;
+};
+
+export type StoryShot = {
+  id: string;
+  scene: string;
+  duration: number;
+  purpose: string;
+  size: string;
+  camera: string;
+  action: string;
+  sourceBeatIds?: string[];
+  [key: string]: unknown;
+};
+
+export type StoryDocument = {
+  spec: StorySpec;
+  script: string;
+  scenes: Array<Record<string, unknown>>;
+  shots: StoryShot[];
+  asset_handoff_receipt?: Record<string, unknown> | null;
+  script_versions: Array<Record<string, unknown>>;
+  storyboard_versions: Array<Record<string, unknown>>;
+};
+
+export type StoryChecks = {
+  ok: boolean;
+  errors: number;
+  warnings: number;
+  issues: Array<{ code: string; severity: string; message: string; shot_id?: string; details?: Record<string, unknown> }>;
+  metrics: { scene_count: number; shot_count: number; total_duration: number; target_duration: number; reference_duration?: number; duration_difference?: number; estimated_dialogue_duration?: number; shot_budget?: Record<string, unknown> };
+};
+
+export type StoryEnvelope = {
+  project_id: string;
+  revision: number;
+  story: StoryDocument;
+  checks: StoryChecks;
+  library?: AssetLibraryEnvelope;
+  asset_board?: AssetBoardEnvelope;
+};
+
+export type PromptConsistencyReview = {
+  status: 'not_started' | 'checking' | 'needs_repair' | 'passed' | 'needs_intent_revision' | 'blocked' | string;
+  attempt: number;
+  maxAttempts?: number;
+  message: string;
+  issueCodes?: string[];
+  issues?: Array<{ code?: string; message?: string }>;
+  checks?: Record<string, boolean>;
+  requiresIntentRevision?: boolean;
+  checkedAt?: string | null;
+};
+
+export type AssetPromptCard = {
+  id: string;
+  assetClass: string;
+  name: string;
+  priority?: string;
+  required?: boolean;
+  targetSkill?: string;
+  relevantShots?: string[];
+  prompt: string;
+  copyablePrompt?: string;
+  promptPack?: Record<string, unknown>;
+  promptContractVersion?: string;
+  promptWorkflow?: string;
+  promptQuality?: {
+    schema_version?: string;
+    status?: string;
+    coverage?: { passed?: number; total?: number; percent?: number };
+    missing?: string[];
+    checks?: Array<{ label?: string; present?: boolean }>;
+    [key: string]: unknown;
+  };
+  mustPreserve?: string[];
+  mustAvoid?: string[];
+  promptVersion?: string;
+  promptQaDecision?: string;
+  generationChoiceStatus?: string;
+  generationStatus?: string;
+  assetAspectRatio?: '16:9' | '1:1' | '9:16' | string | null;
+  aspectRatio?: '16:9' | '1:1' | '9:16' | string | null;
+  assetLayoutProfile?: string | null;
+  assetOutputFormat?: 'png' | 'video' | string | null;
+  outputFormat?: 'png' | 'video' | string | null;
+  externalGenerationRequired?: boolean;
+  uploadAllowed?: boolean;
+  imageQaRequired?: boolean;
+  promptConsistencyReview?: PromptConsistencyReview | null;
+};
+
+export type AssetPromptRun = {
+  id: string;
+  status: string;
+  assetIntentVersion?: number | null;
+  promptCards: AssetPromptCard[];
+  /** One automatically-created planning slot per storyboard shot. */
+  fusionPlans?: Array<Record<string, unknown>>;
+  missingA?: string[];
+  regulatorOutput?: Record<string, unknown>;
+  promptOutput?: Record<string, unknown>;
+  promptConsistency?: {
+    status?: string;
+    maxAutoRepairAttempts?: number;
+    passed?: number;
+    failed?: number;
+    assets?: Array<{ assetId?: string; status?: string; repairAttempts?: number; issueCodes?: string[]; message?: string }>;
+  };
+  handoffProvenance?: AssetIntentProvenance;
+};
+
+export type AssetPromptRunEnvelope = {
+  project_id: string;
+  revision: number;
+  run: AssetPromptRun;
+  story: StoryEnvelope;
+  library: AssetLibraryEnvelope;
+  asset_board: AssetBoardEnvelope;
+};
+
+export type AssetIntentAsset = {
+  assetId: string;
+  assetClass: string;
+  assetName: string;
+  assetRole?: string;
+  relevantShots: string[];
+  grade?: string;
+  required?: boolean;
+  userText: string;
+  mode?: 'user_input' | 'script_only' | 'deferred' | 'draft' | string | null;
+  status: 'empty' | 'processing' | 'submitted' | 'blocked' | 'failed' | string;
+  warningSummary: string[];
+  assetAspectRatio?: '16:9' | '1:1' | '9:16' | string | null;
+  assetAspectRatioSource?: string | null;
+  assetLayoutProfile?: string | null;
+  assetOutputFormat?: 'png' | 'video' | string | null;
+  promptConsistencyReview?: PromptConsistencyReview | null;
+  provenance?: AssetIntentProvenance;
+  updatedAt?: string | null;
+  readOnly?: boolean;
+};
+
+export type AssetIntentProgress = {
+  handled: number;
+  total: number;
+  percent: number;
+  allHandled: boolean;
+};
+
+export type AssetIntentProvenance = {
+  sourceScriptVersionId?: string | null;
+  sourceStoryboardVersionId?: string | null;
+  sourceShotIds: string[];
+  sourceFingerprint?: string | null;
+};
+
+export type AssetIntentSystemPlan = {
+  assetId: string;
+  assetClass: string;
+  assetName: string;
+  assetRole?: string;
+  relevantShots: string[];
+  grade?: string;
+  kind: 'fusion' | 'shot_continuity' | 'audio' | 'system_other' | string;
+  label: string;
+  status: 'system_planned' | string;
+  message?: string;
+  readOnly?: boolean;
+};
+
+export type AssetIntentEnvelope = {
+  project_id: string;
+  revision: number;
+  assetIntentVersion: number;
+  sourceStoryRevision?: string | null;
+  currentStoryRevision?: string | null;
+  sourceAssetManifestFingerprint?: string | null;
+  currentAssetManifestFingerprint: string;
+  sourceProvenance?: AssetIntentProvenance | null;
+  currentProvenance?: AssetIntentProvenance | null;
+  manifestStale: boolean;
+  assets: AssetIntentAsset[];
+  systemPlans: AssetIntentSystemPlan[];
+  summary?: {
+    baseAssetCount: number;
+    systemPlanCount: number;
+  };
+  progress: AssetIntentProgress;
+  warnings: string[];
+  assetManifestReady: boolean;
+};
+
+export type AssetIntentPrepareEnvelope = AssetIntentEnvelope & {
+  preparedAssetCount?: number;
+  project_revision?: number;
+  story?: StoryEnvelope['story'];
+  checks?: StoryEnvelope['checks'];
+  library?: AssetLibraryEnvelope;
+  asset_board?: AssetBoardEnvelope;
+};
+
+export type FusionPromptRunEnvelope = {
+  project_id: string;
+  revision: number;
+  board_revision: number;
+  run: {
+    id: string;
+    status: string;
+    fusion_asset_id: string;
+    shot_id: string;
+    source_asset_ids: string[];
+    source_prompt_versions?: Record<string, string>;
+    input_fingerprint?: string;
+    warnings?: string[];
+    prompt_contract_version?: string;
+    prompt_workflow?: string;
+    prompt_quality?: AssetPromptCard['promptQuality'];
+  };
+  prompt_version: Record<string, any>;
+  fusion_asset: LibraryAsset | null;
+  library: AssetLibraryEnvelope;
+  asset_board: AssetBoardEnvelope;
+};
+
+export type StoryRun = {
+  id: string;
+  project_id: string;
+  status: string;
+  active_step: string;
+  input?: Record<string, unknown> | null;
+  workflow_mode?: 'optimize_script_and_storyboard' | 'storyboard_from_source' | string;
+  storyboard_output?: Record<string, unknown> | null;
+  regulator_output?: Record<string, unknown> | null;
+  error?: Record<string, unknown> | null;
+};
+
+export type StoryDiff = {
+  project_id: string;
+  from_version_id: string;
+  to_version_id: string;
+  script_diff: Array<{ type: 'same' | 'add' | 'del'; text: string }>;
+  shot_diff: { added: Array<Record<string, unknown>>; removed: Array<Record<string, unknown>>; changed: Array<{ id: string; fields: string[]; before: Record<string, unknown>; after: Record<string, unknown> }> };
+};
+
+export type AssetReference = {
+  id?: string;
+  reference_id: string;
+  reference_kind?: string;
+  artifact_id?: string | null;
+  role: string;
+  source?: string;
+  notes?: string;
+};
+
+export type AssetReadiness = {
+  status: string;
+  kind?: 'production' | 'reference' | string;
+  required: boolean;
+  grade?: string;
+  ready: boolean;
+  registered_ready?: boolean;
+  production_ready?: boolean;
+  missing: string[];
+  production_missing?: string[];
+  next_action?: string;
+  qa_kind?: 'prompt' | 'image' | 'video' | 'audio' | 'reference' | string;
+  reference_ready?: boolean;
+  qa_decision?: string | null;
+  registered: boolean;
+  has_file: boolean;
+  manual_production_approval?: Record<string, any> | null;
+  manual_approval_active?: boolean;
+};
+
+export type AssetWorkflow = {
+  state: string;
+  kind: 'production' | 'reference' | string;
+  qa_type: 'prompt' | 'image' | 'video' | 'audio' | 'reference' | string;
+  qa_owner?: string | null;
+  artifact_id?: string | null;
+  next_action: { code: string; label: string; enabled: boolean };
+  allowed_actions: string[];
+  blockers: string[];
+};
+
+export type AssetComparison = {
+  id: string;
+  comparison_group: string;
+  strategy: string;
+  prompt_version?: string | null;
+  candidates: Array<{ artifact_id: string; score?: number | null; decision: string; comment?: string; annotations?: string[] }>;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type LibraryAsset = Record<string, any> & {
+  id: string;
+  name?: string;
+  assetClass: string;
+  grade?: string;
+  assetMetadata?: Record<string, any>;
+  copyablePrompt?: string;
+  aspectRatio?: '16:9' | '1:1' | '9:16' | string | null;
+  assetAspectRatio?: '16:9' | '1:1' | '9:16' | string | null;
+  assetAspectRatioSource?: string | null;
+  assetLayoutProfile?: string | null;
+  assetOutputFormat?: 'png' | 'video' | string | null;
+  outputFormat?: 'png' | 'video' | string | null;
+  externalGenerationRequired?: boolean;
+  uploadAllowed?: boolean;
+  imageQaRequired?: boolean;
+  promptConsistencyReview?: PromptConsistencyReview | null;
+  readiness: AssetReadiness;
+  workflow: AssetWorkflow;
+  registered_ready?: boolean;
+  production_ready?: boolean;
+  next_action?: string;
+  artifact_count?: number;
+  references: AssetReference[];
+  dependencies: Array<{ dependency_asset_id: string; shot_id?: string | null; relation: string; role?: string; required: boolean }>;
+  prerequisiteDependencies?: Array<Record<string, any>>;
+  prerequisiteGate?: {
+    allowed: boolean;
+    required_asset_ids?: string[];
+    blocked_asset_ids?: string[];
+    items?: Array<Record<string, any>>;
+    reason?: string;
+    [key: string]: any;
+  };
+  comparisons: AssetComparison[];
+  fusionGate?: { allowed: boolean; source_asset_ids: string[]; missing_sources: Array<Record<string, any>>; reference_role_issues: Array<Record<string, any>>; message: string };
+  fusionPromptState?: 'awaiting_connection' | 'prompt_draft_ready' | 'stale' | string;
+  fusionPromptStale?: boolean;
+  fusionPromptStaleReason?: string | null;
+  fusionPlan?: Record<string, any>;
+  promptQuality?: AssetPromptCard['promptQuality'];
+  promptPack?: Record<string, unknown>;
+  promptContractVersion?: string;
+  promptWorkflow?: string;
+  active_artifact_count?: number;
+  archived_artifact_count?: number;
+};
+
+export type AssetLibraryEnvelope = {
+  project_id: string;
+  assets: LibraryAsset[];
+  storage?: { project_id?: string; root?: string; layout_version?: number; exists?: boolean; [key: string]: unknown };
+  storage_integrity?: { ok: boolean; orphan_directories?: string[]; missing_project_records?: string[]; artifact_mismatches?: Array<Record<string, any>>; recovery_policy?: string };
+  summary: {
+    total: number;
+    ready: number;
+    blocked: number;
+    missing_required_a: number;
+    registered_ready?: number;
+    production_ready?: number;
+    artifact_count?: number;
+    by_class?: Record<string, number>;
+    by_status?: Record<string, number>;
+  };
+};
+
+export type AssetAuditItem = {
+  queue: string;
+  queue_label: string;
+  asset: LibraryAsset;
+  artifact?: Record<string, any> | null;
+  qa?: Record<string, any> | null;
+  next_action?: string;
+};
+
+export type AssetAuditEnvelope = {
+  project_id: string;
+  queue: string;
+  items: AssetAuditItem[];
+  counts: Record<string, number>;
+  total: number;
+  summary: AssetLibraryEnvelope['summary'];
+};
